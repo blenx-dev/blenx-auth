@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import pytest
-from blenx_auth.beanie.models import OAuthAccount, RefreshToken
+from blenx_auth.beanie.models import RefreshToken
 from blenx_auth.core.exceptions import AuthError
 from blenx_auth.core.jwt import TokenService
 from blenx_auth.core.plugins import AuthPlugin
@@ -30,13 +30,13 @@ from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.class_builder_beanie import build_beanie_model
 from blenx_auth.fastapi.composition import BeanieAuth
 from blenx_auth.fastapi.exception_handlers import auth_error_handler
-from fastapi.testclient import TestClient
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 from pymongo import MongoClient
 
 from beanie import init_beanie
 from fastapi import APIRouter, FastAPI
+from fastapi.testclient import TestClient
 
 TEST_SECRET = secrets.token_hex(32)
 MOTOR_URI = os.environ.get("MOTOR_URI", "mongodb://localhost:27017")
@@ -202,7 +202,7 @@ def test_end_to_end_http_flow() -> None:
     async def lifespan(app: FastAPI):
         await init_beanie(
             database=database,
-            document_models=[auth.User, RefreshToken, OAuthAccount],
+            document_models=[auth.User, RefreshToken],
         )
         yield
         motor.close()

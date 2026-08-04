@@ -58,8 +58,6 @@ from blenx_auth.fastapi.routers._provider import PluginRouterConfig
 from fastapi import APIRouter, Depends
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
     from beanie import PydanticObjectId
     from blenx_auth.beanie.repositories import (
         BeanieOAuthAccountRepository,
@@ -72,6 +70,7 @@ if TYPE_CHECKING:
         SQLAlchemyRefreshTokenRepository,
         SQLAlchemyUserRepository,
     )
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 def _collect_fn(
@@ -126,8 +125,6 @@ class SQLAlchemyAuth(AuthBackend[Any]):
         base_hooks: AuthHooks | None = None,
         tablename: str = "user",
     ) -> None:
-        from sqlalchemy.ext.asyncio import AsyncSession
-
         from blenx_auth.sqlalchemy.base import AuthBase, UserId
         from blenx_auth.sqlalchemy.models import (
             BaseUserTableMixin,
@@ -139,6 +136,7 @@ class SQLAlchemyAuth(AuthBackend[Any]):
             SQLAlchemyRefreshTokenRepository,
             SQLAlchemyUserRepository,
         )
+        from sqlalchemy.ext.asyncio import AsyncSession
 
         if parse_subject is None:
             parse_subject = uuid.UUID

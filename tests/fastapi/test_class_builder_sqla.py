@@ -14,9 +14,9 @@ from __future__ import annotations
 import pytest
 from blenx_auth.core.plugins.collisions import FieldCollisionError
 from blenx_auth.fastapi.class_builder_sqla import build_sqla_model
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
 class CoreMixin:

@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import pytest
-from blenx_auth.core.contracts import ContractMismatchError, run_contract_check
+from blenx_auth.core.contracts import (
+    ContractMismatchError,
+    run_contract_check,
+    validate_beanie_contract,
+    validate_sqlalchemy_contract,
+)
 from pydantic import BaseModel
 
 
@@ -105,3 +110,38 @@ def test_annotations_fallback_when_no_table_or_model_fields() -> None:
         email: str | None = None
 
     run_contract_check(PlainUser, ReadOK, PlainCreate, PlainUpdate)
+
+
+def test_sqlalchemy_validator_uses_table_columns() -> None:
+    validate_sqlalchemy_contract(User, ReadOK, CreateOK, UpdateOK)
+    with pytest.raises(ExceptionGroup) as exc_info:
+        validate_sqlalchemy_contract(User, ReadExtra, CreateOK, UpdateOK)
+    assert exc_info.value.exceptions[0].schema_label == "UserRead"
+
+
+def test_beanie_validator_uses_model_fields() -> None:
+    class BeanieLikeUser(BaseModel):
+        id: str
+        email: str
+        birthdate: str | None = None
+
+    class BeanieUpdate(BaseModel):
+        email: str | None = None
+        birthdate: str | None = None
+
+    validate_beanie_contract(BeanieLikeUser, ReadOK, CreateOK, BeanieUpdate)
+    with pytest.raises(ExceptionGroup):
+        validate_beanie_contract(BeanieLikeUser, ReadOK, CreateOK, UpdateBroken)
+
+
+def test_run_contract_check_dispatches_on_backend_shape() -> None:
+    class BeanieLikeUser(BaseModel):
+        id: str
+        email: str
+        birthdate: str | None = None
+        is_active: bool = True
+        is_verified: bool = False
+
+    # __table__ -> SQLAlchemy validator; model_fields -> Beanie validator.
+    run_contract_check(User, ReadOK, CreateOK, UpdateOK)
+    run_contract_check(BeanieLikeUser, ReadOK, CreateOK, UpdateOK)

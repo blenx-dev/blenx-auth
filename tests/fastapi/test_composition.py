@@ -25,6 +25,9 @@ from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.composition import SQLAlchemyAuth
 from blenx_auth.sqlalchemy.base import AuthBase
 from pydantic import BaseModel
+
+from fastapi import APIRouter
+from sqlalchemy import Integer, String
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -32,9 +35,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
-
-from fastapi import APIRouter
-from sqlalchemy import Integer, String
 
 
 class Settings(AuthSettings):

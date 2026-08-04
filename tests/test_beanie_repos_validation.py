@@ -9,7 +9,7 @@ running MongoDB is required.
 from __future__ import annotations
 
 import pytest
-from blenx_auth.beanie.models import OAuthAccount, RefreshToken
+from blenx_auth.beanie.models import RefreshToken, User
 from blenx_auth.beanie.repositories import (
     BeanieOAuthAccountRepository,
     BeanieRefreshTokenRepository,
@@ -26,9 +26,9 @@ def test_refresh_repo_model_injection() -> None:
 
 
 def test_oauth_repo_model_injection() -> None:
-    repo = BeanieOAuthAccountRepository(model=OAuthAccount)
-    assert repo._model is OAuthAccount
-    assert BeanieOAuthAccountRepository()._model is OAuthAccount
+    repo = BeanieOAuthAccountRepository(model=User)
+    assert repo._model is User
+    assert BeanieOAuthAccountRepository()._model is User
 
 
 async def test_user_repo_rejects_unknown_extra_field() -> None:

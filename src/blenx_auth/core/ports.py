@@ -26,7 +26,7 @@ structural ``UserAccount``/``RefreshTokenRow``/``OAuthAccountRow`` contracts.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Protocol, TypeVar
+from typing import Protocol, TypeVar, runtime_checkable
 
 from blenx_auth.core.dto import EmailMessage, IdT, NewOAuthLink, NewUser
 
@@ -76,6 +76,7 @@ class OAuthAccountRow(Protocol[IdT]):
     account_email: str
 
 
+@runtime_checkable
 class UserRepository(Protocol[IdT]):
     """Persistence contract for user rows (CRUD only — no policy)."""
 
@@ -88,6 +89,7 @@ class UserRepository(Protocol[IdT]):
     async def save(self, user: UserAccount[IdT]) -> None: ...
 
 
+@runtime_checkable
 class RefreshTokenRepository(Protocol[IdT]):
     """Persistence contract for refresh-token rows."""
 
@@ -109,6 +111,7 @@ class RefreshTokenRepository(Protocol[IdT]):
     async def revoke_all_for_user(self, user_id: IdT) -> None: ...
 
 
+@runtime_checkable
 class OAuthAccountRepository(Protocol[IdT]):
     """Persistence contract for OAuth-linked accounts."""
 
@@ -123,6 +126,7 @@ class OAuthAccountRepository(Protocol[IdT]):
     ) -> None: ...
 
 
+@runtime_checkable
 class EmailSender(Protocol):
     """Structural contract every mailer must satisfy."""
 

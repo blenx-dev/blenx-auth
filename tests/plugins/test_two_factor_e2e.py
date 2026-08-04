@@ -17,11 +17,11 @@ from blenx_auth.fastapi.composition import SQLAlchemyAuth
 from blenx_auth.fastapi.exception_handlers import auth_error_handler
 from blenx_auth.plugins.two_factor import make_two_factor_plugin
 from blenx_auth.sqlalchemy.base import AuthBase
+
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
-
-from fastapi import FastAPI
 
 
 class Settings(AuthSettings):

@@ -29,10 +29,10 @@ from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.composition import SQLAlchemyAuth
 from blenx_auth.fastapi.exception_handlers import auth_error_handler
 from blenx_auth.fastapi.routers import make_auth_router, make_users_router
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from tests.fakes import FakeEmailSender, FakeOAuthAccounts, FakeRefreshTokens, FakeUsers
 
 

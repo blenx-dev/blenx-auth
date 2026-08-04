@@ -59,6 +59,7 @@ class BaseUserCreate(BaseModel):
         str,
         Field(min_length=PasswordPolicy.MIN_LENGTH, max_length=PasswordPolicy.MAX_LENGTH),
     ]
+    birthdate: dt.date | None = None
 
 
 class RegisterRequest(BaseUserCreate):

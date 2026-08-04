@@ -7,10 +7,9 @@ response, so route code never maps errors by hand.
 
 from __future__ import annotations
 
-from fastapi.responses import JSONResponse
-
 from blenx_auth.core.exceptions import AuthError
 from fastapi import Request
+from fastapi.responses import JSONResponse
 
 
 async def auth_error_handler(request: Request, exc: Exception) -> JSONResponse:

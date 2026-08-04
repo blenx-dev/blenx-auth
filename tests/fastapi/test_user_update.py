@@ -24,14 +24,14 @@ from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.composition import SQLAlchemyAuth
 from blenx_auth.fastapi.exception_handlers import auth_error_handler
 from blenx_auth.fastapi.routers import make_auth_router, make_users_router
-from fastapi.testclient import TestClient
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from sqlalchemy.orm import Mapped, mapped_column
 from tests.fakes import FakeUser, FakeUsers
 
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from sqlalchemy import String
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class Settings(AuthSettings):

@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from blenx_auth.core.dto import NewOAuthLink, NewUser
 from blenx_auth.core.exceptions import EmailAlreadyExistsError, UserModelMappingError
 from blenx_auth.core.ports import (
@@ -18,6 +15,8 @@ from blenx_auth.core.ports import (
 from blenx_auth.sqlalchemy.base import UserId
 from blenx_auth.sqlalchemy.models import OAuthAccount, RefreshToken, User
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class SQLAlchemyOAuthAccountRepository(OAuthAccountRepository[UserId]):

@@ -21,8 +21,6 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
 from blenx_auth.core.exceptions import (
     InactiveAccountError,
     InvalidCredentialsError,
@@ -32,6 +30,7 @@ from blenx_auth.core.exceptions import (
 from blenx_auth.core.ports import UserAccount
 from blenx_auth.core.services import AuthenticationService
 from fastapi import Depends, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 bearer_scheme = HTTPBearer(auto_error=False)
 

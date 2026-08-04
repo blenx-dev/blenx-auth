@@ -9,9 +9,9 @@
 from __future__ import annotations
 
 from pydantic import BaseModel
-from sqlalchemy.orm import Mapped, mapped_column
 
 from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class TwoFactorTableMixin:

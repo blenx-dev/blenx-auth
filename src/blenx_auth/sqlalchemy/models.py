@@ -23,8 +23,6 @@ from __future__ import annotations
 import datetime
 import uuid
 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from blenx_auth.core.constants import OAUTH_ACCOUNT_IDENTITY_COLUMNS
 from blenx_auth.sqlalchemy.base import AuthBase
 from sqlalchemy import (
@@ -38,6 +36,7 @@ from sqlalchemy import (
     Uuid,
     func,
 )
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class BaseUserTableMixin:

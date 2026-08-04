@@ -9,6 +9,7 @@ from blenx_auth.core.plugins import (
     PluginDependencyError,
     resolve_plugin_order,
 )
+from blenx_auth.core.plugins.hooks import AuthHooks
 
 
 def plugin(name: str, deps: tuple[str, ...] = ()) -> AuthPlugin:
@@ -51,3 +52,50 @@ def test_diamond_dependency() -> None:
     assert order.index("a") < order.index("c")
     assert order.index("b") < order.index("d")
     assert order.index("c") < order.index("d")
+
+
+def test_plugin_declares_factory_contributions() -> None:
+    from sqlalchemy import Boolean, Column, MetaData, Table
+
+    otp_table = Table("otps", MetaData(), Column("id", Boolean))
+    p = AuthPlugin(
+        name="p",
+        sqla_columns=(Column("is_enabled", Boolean),),
+        sqla_tables=(otp_table,),
+        beanie_mixin=object,
+        beanie_documents=(object,),
+        read_mixin=object,
+        create_mixin=object,
+        update_mixin=object,
+        repository_factory=lambda deps, registry: object(),
+        service_factory=lambda deps, registry: object(),
+        hooks_factory=lambda deps, registry: AuthHooks(),
+        router_factory=lambda deps, registry: object(),
+        depends_on=("x",),
+    )
+    assert p.name == "p"
+    assert [c.name for c in p.sqla_columns] == ["is_enabled"]
+    assert p.sqla_tables == (otp_table,)
+    assert p.beanie_mixin is object
+    assert p.beanie_documents == (object,)
+    assert p.repository_factory is not None
+    assert p.service_factory is not None
+    assert p.hooks_factory is not None
+    assert p.router_factory is not None
+    assert p.depends_on == ("x",)
+
+
+def test_plugin_defaults_are_empty() -> None:
+    p = AuthPlugin(name="bare")
+    assert p.sqla_columns == ()
+    assert p.sqla_tables == ()
+    assert p.beanie_mixin is None
+    assert p.beanie_documents == ()
+    assert p.read_mixin is None
+    assert p.create_mixin is None
+    assert p.update_mixin is None
+    assert p.hooks == AuthHooks()
+    assert p.repository_factory is None
+    assert p.service_factory is None
+    assert p.hooks_factory is None
+    assert p.router_factory is None

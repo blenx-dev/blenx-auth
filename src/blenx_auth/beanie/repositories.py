@@ -8,6 +8,11 @@ do with the SQLAlchemy repositories.
 Identity is ``PydanticObjectId`` (Mongo's native ``_id``); each repository
 drives every query from the ``_model`` class attribute.
 
+OAuth identities are embedded in the ``User`` document (see
+:mod:`blenx_auth.beanie.models`), so the OAuth repository reads/updates the
+``oauth_accounts`` array on the composed user rather than owning a separate
+collection.
+
 A duplicate ``create`` surfaces a ``pymongo.errors.DuplicateKeyError`` (the
 MongoDB analogue of SQLAlchemy's ``IntegrityError``); it is translated here
 into the domain :class:`EmailAlreadyExistsError` so every backend behaves
@@ -22,9 +27,13 @@ from typing import cast
 from pymongo.errors import DuplicateKeyError
 
 from beanie import Document, PydanticObjectId
-from blenx_auth.beanie.models import OAuthAccount, RefreshToken, User
+from blenx_auth.beanie.models import OAuthAccountEmbedded, RefreshToken, User
 from blenx_auth.core.dto import NewOAuthLink, NewUser
-from blenx_auth.core.exceptions import EmailAlreadyExistsError, UserModelMappingError
+from blenx_auth.core.exceptions import (
+    EmailAlreadyExistsError,
+    UserModelMappingError,
+    UserNotFoundError,
+)
 from blenx_auth.core.ports import (
     OAuthAccountRepository,
     RefreshTokenRepository,
@@ -130,43 +139,67 @@ class BeanieRefreshTokenRepository(RefreshTokenRepository[PydanticObjectId]):
 
 
 class BeanieOAuthAccountRepository(OAuthAccountRepository[PydanticObjectId]):
-    """OAuth-account CRUD bound to a ``OAuthAccount`` document.
+    """OAuth-account CRUD over the embedded ``oauth_accounts`` array.
 
-    ``model`` is injectable for the composition root's rebuilt document family.
+    Links live *inside* the composed ``User`` document, so find-or-append is a
+    single-document read plus a ``save``; there is no separate collection.
+    ``model`` is injectable so the composition root can point the repository at
+    its composed document (base + plugin/consumer mixins).
     """
 
-    _model: type[Document] = OAuthAccount
+    _model: type[Document] = User
 
     def __init__(self, model: type[Document] | None = None) -> None:
         if model is not None:
             self._model = model
 
-    async def get_by_provider_account(self, provider: str, account_id: str) -> OAuthAccount | None:
-        return cast(
-            OAuthAccount | None,
-            await self._model.find_one({"oauth_name": provider, "account_id": account_id}),
+    async def get_by_provider_account(
+        self, provider: str, account_id: str
+    ) -> OAuthAccountEmbedded | None:
+        user = await self._model.find_one(
+            {"oauth_accounts.oauth_name": provider, "oauth_accounts.account_id": account_id}
+        )
+        if user is None:
+            return None
+        return next(
+            (
+                account
+                for account in user.oauth_accounts
+                if account.oauth_name == provider and account.account_id == account_id
+            ),
+            None,
         )
 
-    async def link(self, data: NewOAuthLink[PydanticObjectId]) -> OAuthAccount:
-        account = self._model(
+    async def link(self, data: NewOAuthLink[PydanticObjectId]) -> OAuthAccountEmbedded:
+        user = await self._model.find_one({"_id": data.user_id})
+        if user is None:
+            raise UserNotFoundError(data.user_id)
+        account = OAuthAccountEmbedded(
+            user_id=data.user_id,
             oauth_name=data.provider,
             account_id=data.account_id,
             account_email=data.account_email,
-            user_id=data.user_id,
             access_token=data.access_token,
             expires_at=data.expires_at,
             refresh_token=data.refresh_token,
         )
-        await account.insert()
-        return cast(OAuthAccount, account)
+        user.oauth_accounts.append(account)
+        await user.save()
+        return account
 
     async def refresh_token(
         self, account_id: PydanticObjectId, *, access_token: str, expires_at: int | None
     ) -> None:
         """Persist a refreshed provider access token on an existing link."""
-        await self._model.find_one({"_id": account_id}).update(
-            {"$set": {"access_token": access_token, "expires_at": expires_at}}
-        )
+        user = await self._model.find_one({"oauth_accounts.id": account_id})
+        if user is None:
+            return
+        for account in user.oauth_accounts:
+            if account.id == account_id:
+                account.access_token = access_token
+                account.expires_at = expires_at
+                await user.save()
+                return
 
 
 __all__ = [

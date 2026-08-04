@@ -22,10 +22,10 @@ from blenx_auth.core.ports import UserAccount
 from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi import SQLAlchemyAuth, auth_error_handler
 from blenx_auth.sqlalchemy.base import AuthBase
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
 
 from fastapi import Depends, FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 
 class Settings(AuthSettings):

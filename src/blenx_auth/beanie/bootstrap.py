@@ -13,9 +13,9 @@ from typing import Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from beanie import init_beanie
-from blenx_auth.beanie.models import OAuthAccount, RefreshToken, User
+from blenx_auth.beanie.models import RefreshToken, User
 
-DOCUMENT_MODELS = (User, RefreshToken, OAuthAccount)
+DOCUMENT_MODELS = (User, RefreshToken)
 
 
 async def init_beanie_db(database: AsyncIOMotorDatabase[Any]) -> None:

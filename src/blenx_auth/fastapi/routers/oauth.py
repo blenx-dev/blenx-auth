@@ -25,13 +25,12 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import KW_ONLY, dataclass
 from typing import Annotated, Any, Protocol, Required, Unpack
 
-from fastapi.responses import RedirectResponse
-
 from blenx_auth.core.exceptions import InvalidTokenError
 from blenx_auth.core.impl_protocols import AuthBackend
 from blenx_auth.core.services import AuthenticationService
 from blenx_auth.fastapi.routers._provider import AuthRouterConfig, AuthRouterConfigOverrides
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import RedirectResponse
 
 
 class OAuthClient(Protocol):
