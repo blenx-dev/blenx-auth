@@ -92,6 +92,7 @@ def make_auth_router(
             for name, value in payload_fields.items()
             if name not in _CORE_REGISTER_FIELDS
         }
+        print('CREATING',payload,extra_fields)
         return await auth_service.register(
             email=payload.email,  # type: ignore[attr-defined]
             password=payload.password,  # type: ignore[attr-defined]

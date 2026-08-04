@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from blenx_auth.core.dto import NewOAuthLink, NewUser
-from blenx_auth.core.exceptions import EmailAlreadyExistsError, UserModelMappingError
+from blenx_auth.core.exceptions import UnknownError, UserModelMappingError
 from blenx_auth.core.ports import (
     OAuthAccountRepository,
     RefreshTokenRepository,
@@ -172,8 +172,9 @@ class SQLAlchemyUserRepository(UserRepository[UserId]):
             self._session.add(user)
             await self._session.commit()
         except IntegrityError as exc:
+            print('ERROR',exc)
             await self._session.rollback()
-            raise EmailAlreadyExistsError() from exc
+            raise UnknownError() from exc
         await self._session.refresh(user)
         return user
 

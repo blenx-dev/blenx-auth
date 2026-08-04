@@ -201,3 +201,14 @@ class InvalidChallengeError(AuthError):
     status_code = 401
     default_detail = "Invalid or expired challenge."
     headers = {"WWW-Authenticate": "Bearer"}
+
+
+class UnknownError(AuthError):
+    status_code = 400
+    default_detail = "Unknown Error. Please try again later."
+
+    def __init__(self, field_name: object | None = None) -> None:
+        detail = (
+            self.default_detail if field_name is None else f"Unknown user field '{field_name}'."
+        )
+        super().__init__(detail)

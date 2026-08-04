@@ -25,7 +25,7 @@ from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi import auth_error_handler
 from blenx_auth.fastapi.sqlalchemy import SQLAlchemyAuth
 from blenx_auth.sqlalchemy.base import AuthBase
-
+from blenx_auth.plugins.birthday import make_birthday_plugin
 from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
@@ -73,11 +73,8 @@ def create_app() -> FastAPI:
     # The composition root wires the SQLAlchemy repositories to the core
     # services and exposes every FastAPI dependency (service getters plus the
     # current-user guards) bound to its session factory.
-    auth = SQLAlchemyAuth(
-        settings=Settings(),
-        session_factory=session_factory,
-        plugins=[make_two_factor_plugin(otp_repo=PyOtpRepository())],
-    )
+    auth = SQLAlchemyAuth(settings=Settings(), session_factory=session_factory,
+    plugins=[make_two_factor_plugin(otp_repo=PyOtpRepository()),make_birthday_plugin()])
 
     app = FastAPI(lifespan=lifespan)
     app.add_exception_handler(AuthError, auth_error_handler)

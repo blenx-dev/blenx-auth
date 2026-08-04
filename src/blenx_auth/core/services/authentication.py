@@ -97,6 +97,7 @@ class AuthenticationService(Generic[IdT]):
         validate_password(password)
         email = email.lower().strip()
         existing = await self._users.get_by_email(email)
+        print('existing',existing)
         if existing is not None:
             raise EmailAlreadyExistsError()
         user = await self._users.create(

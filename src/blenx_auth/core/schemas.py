@@ -78,7 +78,7 @@ class BaseUserUpdate(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid")
-    display_name: Optional[str]
+    display_name: Optional[str] = None
 
 
 class UserUpdate(BaseUserUpdate):
