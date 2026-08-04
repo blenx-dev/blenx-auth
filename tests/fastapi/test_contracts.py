@@ -77,3 +77,31 @@ def test_multiple_broken_schemas_all_reported() -> None:
     messages = [str(err) for err in errors if isinstance(err, ContractMismatchError)]
     assert any("phone" in m for m in messages)
     assert any("nickname" in m for m in messages)
+
+
+def test_model_fields_lookup_used_when_no_table() -> None:
+    class BeanieLikeUser(BaseModel):
+        id: str
+        email: str
+        birthdate: str | None = None
+
+    class BeanieUpdate(BaseModel):
+        email: str | None = None
+        birthdate: str | None = None
+
+    run_contract_check(BeanieLikeUser, ReadOK, CreateOK, BeanieUpdate)
+
+
+def test_annotations_fallback_when_no_table_or_model_fields() -> None:
+    class PlainUser:
+        id: str
+        email: str
+
+    class PlainCreate(BaseModel):
+        email: str
+        password: str
+
+    class PlainUpdate(BaseModel):
+        email: str | None = None
+
+    run_contract_check(PlainUser, ReadOK, PlainCreate, PlainUpdate)

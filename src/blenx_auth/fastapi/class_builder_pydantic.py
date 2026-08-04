@@ -7,7 +7,8 @@ as confusing MRO shadowing.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, cast
 
 from pydantic import BaseModel, create_model
 
@@ -19,10 +20,20 @@ def build_pydantic_model(
     base: type[BaseModel],
     mixins: Sequence[type[BaseModel]],
     kind: str,
+    field_overrides: Mapping[str, tuple[Any, Any]] | None = None,
 ) -> type[BaseModel]:
     """Create ``name`` by subclassing ``base`` with every ``mixin``.
 
     ``kind`` (``"read"``/``"create"``/``"update"``) scopes the collision check.
+    ``field_overrides`` replaces specific fields after composition (e.g. a
+    backend-specific identity type); values are ``(annotation, default)`` pairs.
     """
     check_no_field_collisions(*mixins, kind=kind)
-    return create_model(name, __base__=(base, *mixins))
+    return cast(
+        type[BaseModel],
+        create_model(
+            name,
+            __base__=(base, *mixins),
+            **cast(dict[str, Any], field_overrides or {}),
+        ),
+    )

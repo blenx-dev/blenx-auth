@@ -166,6 +166,24 @@ def test_verify_refresh_logout_flow(
     assert all(row.revoked_at is not None for row in refresh_tokens.rows.values())
 
 
+def test_logout_all_and_resend_verification(
+    api: tuple[TestClient, FakeUsers, FakeRefreshTokens, FakeEmailSender],
+) -> None:
+    client, _, refresh_tokens, mail = api
+    client.post("/auth/register", json={"email": "a@example.com", "password": "password-123"})
+    r = client.post("/auth/login", json={"email": "a@example.com", "password": "password-123"})
+    access = r.json()["access_token"]
+    headers = {"Authorization": f"Bearer {access}"}
+
+    r = client.post("/auth/resend-verification", headers=headers)
+    assert r.status_code == 204
+    assert any("verify-email" in m.body for m in mail.sent)
+
+    r = client.post("/auth/logout-all", headers=headers)
+    assert r.status_code == 204
+    assert all(row.revoked_at is not None for row in refresh_tokens.rows.values())
+
+
 def test_password_reset_flow(
     api: tuple[TestClient, FakeUsers, FakeRefreshTokens, FakeEmailSender],
 ) -> None:
@@ -272,6 +290,9 @@ def test_oauth_router_round_trip(
     r = test_client.get("/auth/google/authorize")
     assert r.status_code == 307
     assert r.headers["location"].startswith("https://provider.example/consent")
+
+    r = test_client.get("/auth/google/callback?code=abc")
+    assert r.status_code == 401  # missing state is rejected before any exchange
 
     r = test_client.get(f"/auth/google/callback?code=abc&state={client.state}")
     assert r.status_code == 307

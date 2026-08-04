@@ -26,8 +26,10 @@ class FakeUser:
         self.hashed_password = hashed_password
         self.is_verified = False
         self.is_active = True
-        self.id = id(self)
+        self.id = uuid.uuid4()
         self.is_superuser = False
+        self.failed_login_attempts = 0
+        self.locked_until = None
 
 
 class FakeUsers:
@@ -160,12 +162,14 @@ async def main() -> None:
     print(f"  created {user.email}")
 
     print("Logging in ...")
-    pair = await auth.login(email="ann@example.com", password="password-123")
-    print(f"  access_token={pair.access_token[:16]}...")
-
-    print("Refreshing ...")
-    rotated = await auth.refresh(pair.refresh_token)
-    print(f"  new access_token={rotated.access_token[:16]}...")
+    result = await auth.login(email="ann@example.com", password="password-123")
+    if result.kind == "challenge":
+        print(f"  challenge: flow={result.flow}")
+    else:
+        print(f"  access_token={result.access_token[:16]}...")
+        print("Refreshing ...")
+        rotated = await auth.refresh(result.refresh_token)
+        print(f"  new access_token={rotated.access_token[:16]}...")
 
 
 if __name__ == "__main__":

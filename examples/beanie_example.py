@@ -74,8 +74,11 @@ async def main() -> None:
     )
 
     await auth.register(email="ann@example.com", password="password-123")
-    pair = await auth.login(email="ann@example.com", password="password-123")
-    print("login ok, access token:", pair.access_token[:20], "...")
+    result = await auth.login(email="ann@example.com", password="password-123")
+    if result.kind == "challenge":
+        print("login ok, challenge required:", result.flow)
+    else:
+        print("login ok, access token:", result.access_token[:20], "...")
 
 
 if __name__ == "__main__":

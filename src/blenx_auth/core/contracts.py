@@ -32,13 +32,14 @@ class ContractMismatchError(Exception):
 
 
 def run_contract_check(User: type, UserRead: type, UserCreate: type, UserUpdate: type) -> None:
-    """Raise unless every declared schema field maps to a column on ``User``.
+    """Raise unless every declared schema field maps to a column/field on ``User``.
 
-    All mismatches across all three schemas are reported together in one
-    ``ExceptionGroup`` of :class:`ContractMismatchError`.
+    The composed model is duck-typed for the field surface so both backends
+    work: SQLAlchemy exposes columns via ``__table__``; Beanie exposes pydantic
+    ``model_fields``. All mismatches across all three schemas are reported
+    together in one ``ExceptionGroup`` of :class:`ContractMismatchError`.
     """
-    table = getattr(User, "__table__", None)
-    model_columns = set(table.columns.keys()) if table is not None else set()
+    model_columns = _model_field_names(User)
 
     checks: tuple[tuple[type, str, set[str]], ...] = (
         (UserRead, "UserRead", set()),
@@ -48,18 +49,24 @@ def run_contract_check(User: type, UserRead: type, UserCreate: type, UserUpdate:
 
     errors: list[ContractMismatchError] = []
     for schema, label, excluded in checks:
-        model_fields = getattr(schema, "model_fields", None)
-        fields = (
-            set(model_fields.keys()) - excluded
-            if model_fields is not None
-            else set()
-        )
+        fields = _model_field_names(schema) - excluded
         missing = fields - model_columns
         if missing:
             errors.append(ContractMismatchError(label, missing))
 
     if errors:
         raise ExceptionGroup("contract check failed", errors)
+
+
+def _model_field_names(model: type) -> set[str]:
+    """Return the field/column names a composed model declares."""
+    table = getattr(model, "__table__", None)
+    if table is not None:
+        return set(table.columns.keys())
+    model_fields = getattr(model, "model_fields", None)
+    if model_fields is not None:
+        return set(model_fields.keys())
+    return set(getattr(model, "__annotations__", {}).keys())
 
 
 __all__ = ["ContractMismatchError", "run_contract_check"]

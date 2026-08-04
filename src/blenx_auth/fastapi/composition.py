@@ -412,8 +412,16 @@ class BeanieAuth(AuthBackend[Any]):
         register_schema = build_pydantic_model(
             "UserCreate", base=RegisterRequest, mixins=create_mixins, kind="create"
         )
+
+        # Beanie's identity is a Mongo ObjectId, not a UUID: the composed read
+        # schema must serialize it as-is or every HTTP response fails
+        # response-model validation (uuid.UUID rejects ObjectId input).
         user_read_schema = build_pydantic_model(
-            "UserRead", base=UserRead, mixins=read_mixins, kind="read"
+            "UserRead",
+            base=UserRead,
+            mixins=read_mixins,
+            kind="read",
+            field_overrides={"id": (PydanticObjectId, ...)},
         )
         user_update_schema = build_pydantic_model(
             "UserUpdate", base=UserUpdate, mixins=update_mixins, kind="update"
@@ -438,8 +446,8 @@ class BeanieAuth(AuthBackend[Any]):
         self._base_hooks = base_hooks or AuthHooks()
         self._hooks = _merge_plugin_hooks(ordered_plugins, self._base_hooks)
         self._users = BeanieUserRepository(model=user_model)
-        self._refresh_tokens = BeanieRefreshTokenRepository(model=user_model)
-        self._oauth_accounts = BeanieOAuthAccountRepository(model=user_model)
+        self._refresh_tokens = BeanieRefreshTokenRepository()
+        self._oauth_accounts = BeanieOAuthAccountRepository()
 
         self.User = user_model
         self.UserRead = user_read_schema

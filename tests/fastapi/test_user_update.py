@@ -163,6 +163,17 @@ def test_admin_patch_as_superuser_updates_field(app: tuple[FastAPI, FakeUsers]) 
     assert users.rows["me@example.com"].is_active is False
 
 
+def test_admin_get_user(app: tuple[FastAPI, FakeUsers]) -> None:
+    fastapi_app, users = app
+    user = _seed(users, is_superuser=True)
+    client = TestClient(fastapi_app)
+
+    r = client.get(f"/users/{user.id}")
+    assert r.status_code == 200
+    assert r.json()["email"] == "me@example.com"
+    assert r.json()["phone"] == "555-0100"
+
+
 def test_admin_patch_unknown_user_404(app: tuple[FastAPI, FakeUsers]) -> None:
     fastapi_app, users = app
     _seed(users, is_superuser=True)

@@ -16,14 +16,22 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from blenx_auth.core.jwt import TokenService
 from blenx_auth.core.plugins import AuthPlugin
 from blenx_auth.core.plugins.collisions import FieldCollisionError
 from blenx_auth.core.plugins.hooks import AuthHooks
+from blenx_auth.core.services import UserService
 from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.composition import SQLAlchemyAuth
+from blenx_auth.sqlalchemy.base import AuthBase
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.pool import StaticPool
 
 from fastapi import APIRouter
 from sqlalchemy import Integer, String
@@ -171,3 +179,55 @@ def test_plugin_router_factory_contributes_router() -> None:
     )
     paths = [r.path for router in auth.routers for r in router.routes]
     assert "/2fa/verify" in paths
+
+
+async def test_service_dependencies_and_accessors() -> None:
+    engine = create_async_engine(
+        "sqlite+aiosqlite://",
+        poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
+    )
+    factory = async_sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
+    )
+    auth = SQLAlchemyAuth(
+        settings=Settings(),
+        session_factory=factory,
+        plugins=[FavoriteColorPlugin()],
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(AuthBase.metadata.create_all)
+
+    assert isinstance(auth.token_service, TokenService)
+    assert auth.settings is auth._settings
+    assert auth.user_model is auth.User
+    assert auth.plugin_router_config("favorite_color") is not None
+    assert auth.plugin_router_config("missing") is None
+
+    async with factory() as session:
+        verification = await auth.get_verification_service(session)
+        assert verification is not None
+        password_reset = await auth.get_password_reset_service(session)
+        assert password_reset is not None
+        user_service = await auth.get_user_service(session)
+        assert isinstance(user_service, UserService)
+
+        assert auth.get_user_repository(session) is not None
+        assert auth.get_refresh_token_repository(session) is not None
+        assert auth.get_oauth_account_repository(session) is not None
+
+        # DB-layer validation: unknown extra fields raise before any write
+        from blenx_auth.core.dto import NewUser
+        from blenx_auth.core.exceptions import UserModelMappingError
+
+        with pytest.raises(UserModelMappingError) as excinfo:
+            await auth.get_user_repository(session).create(
+                NewUser(
+                    email="a@example.com",
+                    hashed_password="h",
+                    extra_fields={"no_such_field": 1},
+                )
+            )
+        assert "no_such_field" in str(excinfo.value)
+
+    await engine.dispose()

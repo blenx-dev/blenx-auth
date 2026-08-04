@@ -8,6 +8,7 @@ deterministic regardless of ``.env``.
 from __future__ import annotations
 
 import secrets
+import uuid
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -309,6 +310,77 @@ async def test_password_hashes_are_argon2id(harness: AuthHarness) -> None:
 
 async def _active(user):
     return user
+
+
+async def test_login_inactive_account_rejected(harness: AuthHarness) -> None:
+    await harness.auth.register(email="ann@example.com", password="password-123")
+    user = await harness.users.get_by_email("ann@example.com")
+    user.is_active = False
+    with pytest.raises(InactiveAccountError):
+        await harness.auth.login(email="ann@example.com", password="password-123")
+
+
+async def test_oauth_login_updates_email_on_existing_link(harness: AuthHarness) -> None:
+    await harness.auth.oauth_login(
+        provider="google",
+        account_id="sub-1",
+        account_email="O@Example.com",
+        oauth_access_token="at",
+    )
+    pair = await harness.auth.oauth_login(
+        provider="google",
+        account_id="sub-1",
+        account_email="new@example.com",
+        oauth_access_token="at",
+    )
+    user = await harness.users.get_by_email("new@example.com")
+    assert pair.access_token
+    assert user is not None
+    assert user.id is not None
+
+
+async def test_oauth_login_linked_user_deleted_raises(harness: AuthHarness) -> None:
+    await harness.auth.oauth_login(
+        provider="google",
+        account_id="sub-1",
+        account_email="o@example.com",
+        oauth_access_token="at",
+    )
+    harness.users.rows.clear()
+    with pytest.raises(InvalidCredentialsError):
+        await harness.auth.oauth_login(
+            provider="google",
+            account_id="sub-1",
+            account_email="o@example.com",
+            oauth_access_token="at",
+        )
+
+
+async def test_refresh_valid_token_without_stored_row_raises(harness: AuthHarness) -> None:
+    user = await harness.auth.register(email="ann@example.com", password="password-123")
+    # a cryptographically valid refresh token that was never persisted
+    raw = harness.tokens.create_refresh_token(str(user.id))
+    with pytest.raises(InvalidRefreshTokenError):
+        await harness.auth.refresh(raw)
+
+
+async def test_refresh_valid_row_but_deleted_user_raises(harness: AuthHarness) -> None:
+    await harness.auth.register(email="ann@example.com", password="password-123")
+    pair = await harness.auth.login(email="ann@example.com", password="password-123")
+    harness.users.rows.clear()
+    with pytest.raises(InvalidRefreshTokenError):
+        await harness.auth.refresh(pair.refresh_token)
+
+
+async def test_logout_with_garbage_token_is_idempotent(harness: AuthHarness) -> None:
+    await harness.auth.register(email="ann@example.com", password="password-123")
+    await harness.auth.logout("not-a-real-jwt")  # must not raise
+
+
+async def test_authenticate_access_token_unknown_subject_raises(harness: AuthHarness) -> None:
+    unknown = harness.tokens.create_access_token(str(uuid.uuid4()))
+    with pytest.raises(InvalidTokenError):
+        await harness.auth.authenticate_access_token(unknown)
 
 
 async def test_roles_and_permissions() -> None:
