@@ -160,3 +160,44 @@ class PermissionDeniedError(AuthError):
 
     status_code = 403
     default_detail = "You do not have permission to perform this action."
+
+
+class UserNotFoundError(AuthError):
+    """No account exists for the requested user id."""
+
+    status_code = 404
+    default_detail = "User not found."
+
+    def __init__(self, user_id: object | None = None) -> None:
+        detail = self.default_detail if user_id is None else f"User '{user_id}' not found."
+        super().__init__(detail)
+
+
+class UserModelMappingError(AuthError):
+    """A payload field has no corresponding attribute on the user model.
+
+    Raised at the service layer when an update payload (or repository
+    ``create`` call) names a field the storage model does not declare — the
+    runtime analogue of the startup :class:`ContractMismatchError`.
+    """
+
+    status_code = 422
+    default_detail = "Payload contains a field that is not present on the user model."
+
+    def __init__(self, field_name: object | None = None) -> None:
+        detail = (
+            self.default_detail if field_name is None else f"Unknown user field '{field_name}'."
+        )
+        super().__init__(detail)
+
+
+class InvalidChallengeError(AuthError):
+    """A login challenge token is missing, expired, or on the wrong flow.
+
+    Issued by the 2FA/step-up flows: the client presented a challenge token
+    that is not pending (``scope != 2fa_pending``) or the wrong code.
+    """
+
+    status_code = 401
+    default_detail = "Invalid or expired challenge."
+    headers = {"WWW-Authenticate": "Bearer"}

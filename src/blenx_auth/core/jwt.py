@@ -223,3 +223,32 @@ class TokenService:
     def verify_oauth_state(self, token: str) -> None:
         """Raise unless ``token`` is a valid, unexpired OAuth state value."""
         verify_token(token, TokenType.OAUTH_STATE, self._settings)
+
+    def encode(self, payload: dict[str, Any], *, ttl_seconds: int) -> str:
+        """Mint a short-lived, single-purpose JWT carrying arbitrary claims.
+
+        Used by challenge/step-up flows (e.g. the 2FA ``challenge_token``) that
+        need claims beyond ``sub``. Standard claims (``sub``, ``typ``, ``iat``,
+        ``exp``, ``jti``) are always stamped; caller claims take precedence for
+        everything else but cannot override them.
+        """
+        now = _now()
+        full: _JWTPayload = {
+            **payload,
+            JWT_CLAIM_SUBJECT: payload.get(JWT_CLAIM_SUBJECT) or "",
+            JWT_CLAIM_TYPE: TokenType.CHALLENGE.value,
+            JWT_CLAIM_JTI: str(uuid.uuid4()),
+            JWT_CLAIM_ISSUED_AT: int(now.timestamp()),
+            JWT_CLAIM_EXPIRES_AT: int((now + timedelta(seconds=ttl_seconds)).timestamp()),
+        }
+        return pyjwt.encode(full, self._settings.secret_key, algorithm=self._settings.jwt_algorithm)
+
+    def decode(self, token: str) -> dict[str, Any]:
+        """Return the verified claims of a challenge-style token.
+
+        Signature and expiry are checked (raising :class:`ExpiredTokenError` /
+        :class:`InvalidTokenError`); the ``typ`` claim is **not** restricted
+        here — callers that need a specific family must check it themselves
+        (e.g. the 2FA flow asserts ``scope == "2fa_pending"``).
+        """
+        return _decode_raw(token, self._settings)

@@ -249,20 +249,24 @@ def test_oauth_router_round_trip(
     async def get_id_email(access_token: str) -> tuple[str, str | None]:
         return "sub-1", "o@example.com"
 
+    auth = SQLAlchemyAuth(
+        settings=settings,
+        session_factory=async_sessionmaker(class_=AsyncSession),  # unused here
+    )
     app = FastAPI()
     app.add_exception_handler(AuthError, auth_error_handler)
     client = FakeOAuthClient()
     app.include_router(
         make_oauth_router(
+            auth,
             client=client,
             get_id_email=get_id_email,
-            get_authentication_service=build_authentication,
-            token_service=tokens,
             prefix="/auth/google",
             backend_url=settings.backend_url,
             frontend_url=settings.frontend_url,
         )
     )
+    app.dependency_overrides[auth.get_authentication_service] = build_authentication
 
     test_client = TestClient(app, follow_redirects=False)
     r = test_client.get("/auth/google/authorize")

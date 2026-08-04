@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Generic, TypeVar, Any
+from typing import Any, Generic, TypeVar
 
 from blenx_auth.core.constants import TOKEN_TYPE_BEARER
 
@@ -23,8 +23,11 @@ IdT = TypeVar("IdT")
 class NewUser:
     """The subset of a user record required to create an account.
 
-    ``extra_data`` carries consumer-defined fields (e.g. ``phone_number``)
-    straight through to the repository, which persists them onto its model.
+    ``extra_fields`` carries consumer/plugin-declared fields (e.g.
+    ``is_2fa_enabled``) straight through to the repository, which validates
+    them against its model and persists the ones it declares. The wire-level
+    validation happens earlier, at the request schema (typed create mixins);
+    this dict is purely the transport between service and repository.
     """
 
     email: str
@@ -32,7 +35,7 @@ class NewUser:
     is_verified: bool = False
     is_superuser: bool = False
     birthdate: date | None = None
-    extra_data: dict[str, Any] = field(default_factory=dict)
+    extra_fields: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

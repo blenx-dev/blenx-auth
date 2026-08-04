@@ -5,6 +5,11 @@ services, reads request metadata (client IP, user agent) for refresh-token
 rows, and lets the registered :class:`AuthError` handler render failures. No
 business rules live here.
 
+``register_schema`` / ``user_read_schema`` are parametrized through
+:class:`~blenx_auth.fastapi.routers._provider.AuthRouterConfig` so a
+composition root can substitute its dynamically-composed schemas; when absent,
+the default ``RegisterRequest`` / ``UserRead`` schemas are used.
+
 NOTE: this module intentionally omits ``from __future__ import annotations``.
 Route signatures reference the composition root's dependency closures inside
 ``Depends(...)``; FastAPI resolves them with
@@ -19,7 +24,10 @@ from blenx_auth.core.impl_protocols import AuthBackend
 from blenx_auth.core.ports import UserAccount
 from blenx_auth.core.schemas import (
     ForgotPasswordRequest,
+    LoginChallenge,
     LoginRequest,
+    LoginResponse,
+    LoginSuccess,
     LogoutRequest,
     RefreshRequest,
     RegisterRequest,
@@ -33,10 +41,17 @@ from blenx_auth.core.services import (
     EmailVerificationService,
     PasswordResetService,
 )
-from blenx_auth.fastapi.routers._provider import AuthRouterConfig, AuthRouterConfigOverrides
+from blenx_auth.fastapi.routers._provider import (
+    AuthRouterConfigOverrides,
+    merge_router_config,
+)
 from fastapi import APIRouter, Depends, Request, Response, status
 
 ServiceDep = Callable[..., Awaitable[AuthenticationService[Any]]]
+
+# Registration fields owned by the core create schema; everything else on the
+# request is a consumer/plugin-declared field and flows through to the model.
+_CORE_REGISTER_FIELDS = frozenset({"email", "password", "birthdate"})
 
 
 def _client_metadata(request: Request) -> tuple[str | None, str | None, str | None]:
@@ -47,12 +62,14 @@ def _client_metadata(request: Request) -> tuple[str | None, str | None, str | No
 
 
 def make_auth_router(
-    auth: AuthBackend,
+    auth: AuthBackend[Any],
     **options: Unpack[AuthRouterConfigOverrides],
 ) -> APIRouter:
     """Build the ``/auth`` router bound to ``auth`` (a composition root)."""
-    config = AuthRouterConfig(**options)
+    config = merge_router_config(auth, options, prefix="/auth")
     router = APIRouter(prefix=config.prefix, tags=config.tags)
+    register_schema = config.register_schema or RegisterRequest
+    user_read_schema = config.user_read_schema or UserRead
     get_authentication_service = auth.get_authentication_service
     get_verification_service = auth.get_verification_service
     get_password_reset_service = auth.get_password_reset_service
@@ -60,36 +77,52 @@ def make_auth_router(
 
     @router.post(
         "/register",
-        response_model=UserRead,
+        response_model=user_read_schema,
         status_code=status.HTTP_201_CREATED,
         summary="Register a new account",
     )
     async def register(
-        payload: RegisterRequest,
+        payload: register_schema,  # type: ignore[valid-type]
         auth_service: Annotated[AuthenticationService[Any], Depends(get_authentication_service)],
     ) -> UserAccount[Any]:
         """Create an unverified account and mail its verification link."""
+        payload_fields = payload.model_dump()  # type: ignore[attr-defined]
+        extra_fields = {
+            name: value
+            for name, value in payload_fields.items()
+            if name not in _CORE_REGISTER_FIELDS
+        }
         return await auth_service.register(
-            email=payload.email,
-            password=payload.password,
-            birthdate=payload.birthdate,
+            email=payload.email,  # type: ignore[attr-defined]
+            password=payload.password,  # type: ignore[attr-defined]
+            birthdate=payload.birthdate,  # type: ignore[attr-defined]
+            extra_fields=extra_fields,
         )
 
-    @router.post("/login", response_model=TokenResponse, summary="Exchange credentials for tokens")
+    @router.post(
+        "/login",
+        response_model=LoginResponse,
+        summary="Exchange credentials for tokens",
+    )
     async def login(
         payload: LoginRequest,
         request: Request,
         auth_service: Annotated[AuthenticationService[Any], Depends(get_authentication_service)],
-    ) -> TokenResponse:
-        """Authenticate and issue an access + refresh pair."""
+    ) -> LoginSuccess | LoginChallenge:
+        """Authenticate and issue an access + refresh pair.
+
+        Returns the :data:`LoginResponse` discriminated union: a plain
+        ``LoginSuccess`` (``kind == "token"``) unless a ``transform_login_result``
+        hook downgraded the result to a ``LoginChallenge`` (``kind == "challenge"``,
+        e.g. a second factor is required).
+        """
         ip, user_agent, _ = _client_metadata(request)
-        pair = await auth_service.login(
+        return await auth_service.login(
             email=payload.email,
             password=payload.password,
             ip_address=ip,
             user_agent=user_agent,
         )
-        return TokenResponse.from_pair(pair)
 
     @router.post("/refresh", response_model=TokenResponse, summary="Rotate a refresh token")
     async def refresh(

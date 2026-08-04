@@ -24,7 +24,7 @@ from pymongo.errors import DuplicateKeyError
 from beanie import Document, PydanticObjectId
 from blenx_auth.beanie.models import OAuthAccount, RefreshToken, User
 from blenx_auth.core.dto import NewOAuthLink, NewUser
-from blenx_auth.core.exceptions import EmailAlreadyExistsError
+from blenx_auth.core.exceptions import EmailAlreadyExistsError, UserModelMappingError
 from blenx_auth.core.ports import (
     OAuthAccountRepository,
     RefreshTokenRepository,
@@ -34,9 +34,17 @@ from blenx_auth.core.ports import (
 
 
 class BeanieUserRepository(UserRepository[PydanticObjectId]):
-    """User CRUD bound to the ``User`` document."""
+    """User CRUD bound to a ``User`` document.
+
+    ``model`` is injectable so the composition root can point the repository at
+    its composed document (base + plugin/consumer mixins).
+    """
 
     _model: type[Document] = User
+
+    def __init__(self, model: type[Document] | None = None) -> None:
+        if model is not None:
+            self._model = model
 
     async def get_by_email(self, email: str) -> User | None:
         return cast(User | None, await self._model.find_one({"email": email}))
@@ -45,12 +53,14 @@ class BeanieUserRepository(UserRepository[PydanticObjectId]):
         return cast(User | None, await self._model.find_one({"_id": user_id}))
 
     async def create(self, data: NewUser) -> User:
+        extra_fields = self._validated_extra_fields(data.extra_fields)
         user = self._model(
             email=data.email,
             hashed_password=data.hashed_password,
             is_verified=data.is_verified,
             is_superuser=data.is_superuser,
             birthdate=data.birthdate,
+            **extra_fields,
         )
         try:
             await user.insert()
@@ -62,11 +72,25 @@ class BeanieUserRepository(UserRepository[PydanticObjectId]):
         """Persist mutations made by the service on a fetched document."""
         await cast(Document, user).save()
 
+    def _validated_extra_fields(self, extra: dict[str, object]) -> dict[str, object]:
+        model_fields = set(self._model.model_fields.keys())
+        unknown = set(extra) - model_fields
+        if unknown:
+            raise UserModelMappingError(sorted(unknown)[0])
+        return dict(extra)
+
 
 class BeanieRefreshTokenRepository(RefreshTokenRepository[PydanticObjectId]):
-    """Refresh-token CRUD bound to the ``RefreshToken`` document."""
+    """Refresh-token CRUD bound to a ``RefreshToken`` document.
+
+    ``model`` is injectable for the composition root's rebuilt document family.
+    """
 
     _model: type[Document] = RefreshToken
+
+    def __init__(self, model: type[Document] | None = None) -> None:
+        if model is not None:
+            self._model = model
 
     async def create(
         self,
@@ -106,9 +130,16 @@ class BeanieRefreshTokenRepository(RefreshTokenRepository[PydanticObjectId]):
 
 
 class BeanieOAuthAccountRepository(OAuthAccountRepository[PydanticObjectId]):
-    """OAuth-account CRUD bound to the ``OAuthAccount`` document."""
+    """OAuth-account CRUD bound to a ``OAuthAccount`` document.
+
+    ``model`` is injectable for the composition root's rebuilt document family.
+    """
 
     _model: type[Document] = OAuthAccount
+
+    def __init__(self, model: type[Document] | None = None) -> None:
+        if model is not None:
+            self._model = model
 
     async def get_by_provider_account(self, provider: str, account_id: str) -> OAuthAccount | None:
         return cast(

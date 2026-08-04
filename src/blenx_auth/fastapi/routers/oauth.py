@@ -21,20 +21,16 @@ NOTE: this module intentionally omits ``from __future__ import annotations``
 for the same reason as :mod:`blenx_auth.fastapi.routers.auth`.
 """
 
-from dataclasses import KW_ONLY
-from dataclasses import dataclass
-from typing import Unpack, Required
-from blenx_auth.fastapi.routers._provider import AuthRouterConfig
-from blenx_auth.fastapi.routers._provider import AuthRouterConfigOverrides
-from blenx_auth.core.impl_protocols import AuthBackend
-
 from collections.abc import Awaitable, Callable, Mapping
-from typing import Annotated, Any, Protocol
+from dataclasses import KW_ONLY, dataclass
+from typing import Annotated, Any, Protocol, Required, Unpack
 
 from fastapi.responses import RedirectResponse
 
 from blenx_auth.core.exceptions import InvalidTokenError
+from blenx_auth.core.impl_protocols import AuthBackend
 from blenx_auth.core.services import AuthenticationService
+from blenx_auth.fastapi.routers._provider import AuthRouterConfig, AuthRouterConfigOverrides
 from fastapi import APIRouter, Depends, Request
 
 
@@ -76,7 +72,7 @@ class OAuthRouterConfig(AuthRouterConfig):
 
 
 def make_oauth_router(
-    auth: AuthBackend,
+    auth: AuthBackend[Any],
     **overrides: Unpack[OAuthRouterConfigOverrides],
 ) -> APIRouter:
     """Build an OAuth login router for ``client`` bound to ``get_authentication_service``."""
@@ -125,7 +121,7 @@ def make_oauth_router(
         pair = await auth_service.oauth_login(
             provider=config.client.name,
             account_id=account_id,
-            account_email=account_email,
+            account_email=account_email or "",
             oauth_access_token=token["access_token"],
             oauth_expires_at=token.get("expires_at"),
             oauth_refresh_token=token.get("refresh_token"),

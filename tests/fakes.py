@@ -51,6 +51,8 @@ class FakeUsers:
             is_verified=data.is_verified,
             birthdate=data.birthdate,
         )
+        for name, value in data.extra_fields.items():
+            setattr(user, name, value)
         if user.email in self.rows:
             raise EmailAlreadyExistsError()
         self.rows[user.email] = user

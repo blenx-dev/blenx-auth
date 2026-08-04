@@ -1,0 +1,31 @@
+"""Mixins the two-factor plugin contributes to the user table and schemas.
+
+- ``TwoFactorTableMixin`` — the two new ``user`` columns (SQLAlchemy
+  ``Mapped`` style, folded into the composed model by the composition root).
+- ``TwoFactorReadMixin`` / ``TwoFactorCreateMixin`` — the corresponding
+  Pydantic fields on ``UserRead`` / ``UserCreate``.
+"""
+
+from __future__ import annotations
+
+from pydantic import BaseModel
+from sqlalchemy.orm import Mapped, mapped_column
+
+from sqlalchemy import String
+
+
+class TwoFactorTableMixin:
+    is_2fa_enabled: Mapped[bool] = mapped_column(default=False)
+    two_factor_type: Mapped[str | None] = mapped_column(String(20), default=None)
+
+
+class TwoFactorReadMixin(BaseModel):
+    is_2fa_enabled: bool
+    two_factor_type: str | None = None
+
+
+class TwoFactorCreateMixin(BaseModel):
+    is_2fa_enabled: bool = False
+
+
+__all__ = ["TwoFactorCreateMixin", "TwoFactorReadMixin", "TwoFactorTableMixin"]

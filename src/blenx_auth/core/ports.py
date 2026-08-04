@@ -24,8 +24,9 @@ structural ``UserAccount``/``RefreshTokenRow``/``OAuthAccountRow`` contracts.
 """
 
 from __future__ import annotations
+
 from datetime import date, datetime
-from typing import Protocol
+from typing import Protocol, TypeVar
 
 from blenx_auth.core.dto import EmailMessage, IdT, NewOAuthLink, NewUser
 
@@ -127,7 +128,5 @@ class EmailSender(Protocol):
 
     async def send(self, message: EmailMessage) -> None: ...
 
-
-from typing import Any, Awaitable, Callable, Protocol, TypeVar, runtime_checkable
 
 UserIdT = TypeVar("UserIdT")

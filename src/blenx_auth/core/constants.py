@@ -29,6 +29,7 @@ class TokenType(enum.StrEnum):
     EMAIL_VERIFY = "email_verify"
     PASSWORD_RESET = "password_reset"  # noqa: S105  (JWT type discriminator, not a secret)
     OAUTH_STATE = "oauth_state"  # noqa: S105  (JWT type discriminator, not a secret)
+    CHALLENGE = "challenge"  # noqa: S105  (JWT type discriminator, not a secret)
 
 
 class PasswordPolicy(enum.IntEnum):

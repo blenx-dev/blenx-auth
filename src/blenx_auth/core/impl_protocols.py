@@ -1,14 +1,15 @@
-from typing import Any
-from blenx_auth.core import PasswordResetService
-from blenx_auth.core import EmailVerificationService
-from blenx_auth.core import AuthenticationService
-from collections.abc import Awaitable
-from collections.abc import Callable
-from blenx_auth.core import AuthSettings
+from collections.abc import Awaitable, Callable
+from typing import Any, Protocol, runtime_checkable
+
+from blenx_auth.core import (
+    AuthenticationService,
+    AuthSettings,
+    EmailVerificationService,
+    PasswordResetService,
+    UserService,
+)
 from blenx_auth.core.jwt import TokenService
 from blenx_auth.core.ports import UserIdT
-from typing import Protocol
-from typing import runtime_checkable
 
 
 @runtime_checkable
@@ -42,12 +43,15 @@ class AuthBackend(Protocol[UserIdT]):
     get_authentication_service: Callable[..., Awaitable[AuthenticationService[UserIdT]]]
     get_verification_service: Callable[..., Awaitable[EmailVerificationService[UserIdT]]]
     get_password_reset_service: Callable[..., Awaitable[PasswordResetService[UserIdT]]]
+    get_user_service: Callable[..., Awaitable[UserService[UserIdT]]]
 
     # -- current-user dependencies --------------------------------------
     get_current_user: Callable[..., Awaitable[Any]]
     get_current_active_user: Callable[..., Awaitable[Any]]
     get_current_verified_user: Callable[..., Awaitable[Any]]
+    get_current_superuser: Callable[..., Awaitable[Any]]
 
     CurrentUser: Any
     CurrentActiveUser: Any
     CurrentVerifiedUser: Any
+    CurrentSuperUser: Any

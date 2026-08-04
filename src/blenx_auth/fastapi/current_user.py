@@ -26,6 +26,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from blenx_auth.core.exceptions import (
     InactiveAccountError,
     InvalidCredentialsError,
+    PermissionDeniedError,
     UnverifiedAccountError,
 )
 from blenx_auth.core.ports import UserAccount
@@ -42,9 +43,11 @@ class CurrentUserDeps:
     get_current_user: Callable[..., Awaitable[UserAccount[Any]]]
     get_current_active_user: Callable[..., Awaitable[UserAccount[Any]]]
     get_current_verified_user: Callable[..., Awaitable[UserAccount[Any]]]
+    get_current_superuser: Callable[..., Awaitable[UserAccount[Any]]]
     CurrentUser: Any
     CurrentActiveUser: Any
     CurrentVerifiedUser: Any
+    CurrentSuperUser: Any
 
 
 def make_current_user_dependencies(
@@ -84,13 +87,23 @@ def make_current_user_dependencies(
             raise UnverifiedAccountError()
         return user
 
+    async def get_current_superuser(
+        user: Annotated[UserAccount[Any], Depends(get_current_active_user)],
+    ) -> UserAccount[Any]:
+        """A user with the superuser flag (admin-only endpoints)."""
+        if not user.is_superuser:
+            raise PermissionDeniedError()
+        return user
+
     return CurrentUserDeps(
         get_current_user=get_current_user,
         get_current_active_user=get_current_active_user,
         get_current_verified_user=get_current_verified_user,
+        get_current_superuser=get_current_superuser,
         CurrentUser=Annotated[UserAccount[Any], Depends(get_current_user)],
         CurrentActiveUser=Annotated[UserAccount[Any], Depends(get_current_active_user)],
         CurrentVerifiedUser=Annotated[UserAccount[Any], Depends(get_current_verified_user)],
+        CurrentSuperUser=Annotated[UserAccount[Any], Depends(get_current_superuser)],
     )
 
 

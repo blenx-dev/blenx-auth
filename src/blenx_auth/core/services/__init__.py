@@ -23,6 +23,12 @@ Security notes implemented here:
 
 from blenx_auth.core.services.authentication import AuthenticationService
 from blenx_auth.core.services.password_reset import PasswordResetService
+from blenx_auth.core.services.user_service import UserService
 from blenx_auth.core.services.verification import EmailVerificationService
 
-__all__ = ["AuthenticationService", "EmailVerificationService", "PasswordResetService"]
+__all__ = [
+    "AuthenticationService",
+    "EmailVerificationService",
+    "PasswordResetService",
+    "UserService",
+]
