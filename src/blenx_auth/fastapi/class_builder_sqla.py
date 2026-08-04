@@ -22,6 +22,7 @@ def build_sqla_model(
     tablename: str,
     auth_base: type,
     core_mixin: type,
+    mixins: Sequence[type],
 ) -> type:
     """Build the ``User`` entity mapped to ``tablename`` on ``auth_base``.
 
@@ -30,8 +31,8 @@ def build_sqla_model(
     columns). The class name is always ``"User"`` because the auth models'
     relationships reference ``'User'`` by name.
     """
-    check_no_field_collisions(kind="table")
-    bases = (auth_base, core_mixin)
+    check_no_field_collisions(*mixins, kind="table")
+    bases = (auth_base, core_mixin, *mixins)
     return type("User", bases, {"__tablename__": tablename})
 
 
@@ -40,6 +41,7 @@ def build_sqla_models(
     auth_base: type,
     core_mixin: type,
     tablename: str,
+    table_mixins: Sequence[type],
     refresh_token_factory: Callable[[type], type],
     oauth_account_factory: Callable[[type], type],
 ) -> tuple[type[User], type[RefreshToken], type[OAuthAccount]]:
@@ -65,7 +67,7 @@ def build_sqla_models(
 
     refresh_token = cast("type[RefreshToken]", refresh_token_factory(auth_base))
     oauth_account = cast("type[OAuthAccount]", oauth_account_factory(auth_base))
-    user = cast("type[User]", build_sqla_model(tablename, auth_base, core_mixin ))
+    user = cast("type[User]", build_sqla_model(tablename, auth_base, core_mixin, table_mixins))
     return user, refresh_token, oauth_account
 
 

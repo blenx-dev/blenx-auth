@@ -14,6 +14,8 @@ engine for Postgres to use it in real deployments.
 # resolved and the guard silently degrades to a query parameter. The library's
 # own routers omit it for the same reason.
 
+from blenx_auth.plugins.two_factor import OtpRepository
+from blenx_auth.plugins.two_factor import make_two_factor_plugin
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -44,6 +46,11 @@ class Settings(AuthSettings):
     google_client_id = ""
     google_client_secret = ""
 
+class PyOtpRepository(OtpRepository):
+    """Code verification for one user; raises on a bad/missing code."""
+
+    async def verify_code(self, user_id: str, code: str) -> None:
+        raise AuthError()
 
 def create_app() -> FastAPI:
     """Build the app: one composition root bound to an in-memory SQLite DB."""
@@ -64,7 +71,8 @@ def create_app() -> FastAPI:
     # The composition root wires the SQLAlchemy repositories to the core
     # services and exposes every FastAPI dependency (service getters plus the
     # current-user guards) bound to its session factory.
-    auth = SQLAlchemyAuth(settings=Settings(), session_factory=session_factory)
+    auth = SQLAlchemyAuth(settings=Settings(), session_factory=session_factory,
+    plugins=[make_two_factor_plugin(otp_repo=PyOtpRepository())])
 
     app = FastAPI(lifespan=lifespan)
     app.add_exception_handler(AuthError, auth_error_handler)

@@ -7,6 +7,7 @@
 """
 
 from __future__ import annotations
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -21,11 +22,11 @@ class TwoFactorTableMixin:
 
 class TwoFactorReadMixin(BaseModel):
     is_2fa_enabled: bool
-    two_factor_type: str | None = None
+    two_factor_type: Literal['app', 'email'] | None = None
+
+class TwoFactorUpdateMixin(BaseModel):
+    is_2fa_enabled: bool | None = None
+    two_factor_type: Literal['app', 'email'] | None = None
 
 
-class TwoFactorCreateMixin(BaseModel):
-    is_2fa_enabled: bool = False
-
-
-__all__ = ["TwoFactorCreateMixin", "TwoFactorReadMixin", "TwoFactorTableMixin"]
+__all__ = ["TwoFactorUpdateMixin", "TwoFactorReadMixin", "TwoFactorTableMixin"]

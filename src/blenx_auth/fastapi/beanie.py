@@ -117,7 +117,7 @@ class BeanieAuth(AuthBackend[Any]):
             user_model = BeanieUser
 
         register_schema = build_pydantic_model(
-            "UserCreate", base=RegisterRequest,  kind="create"
+            "UserCreate", base=RegisterRequest,  kind="create",mixins=create_mixins
         )
 
         # Beanie's identity is a Mongo ObjectId, not a UUID: the composed read
@@ -127,15 +127,17 @@ class BeanieAuth(AuthBackend[Any]):
             "UserRead",
             base=UserRead,
             kind="read",
+            mixins=read_mixins,
             field_overrides={"id": (PydanticObjectId, ...)},
         )
         user_update_schema = build_pydantic_model(
-            "UserUpdate", base=UserUpdate, kind="update"
+            "UserUpdate", base=UserUpdate, kind="update",mixins=update_mixins
         )
         user_admin_update_schema = build_pydantic_model(
             "UserAdminUpdate",
             base=UserAdminUpdate,
             kind="update",
+            mixins=[]
         )
 
         run_contract_check(

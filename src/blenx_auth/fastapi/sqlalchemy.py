@@ -58,7 +58,6 @@ from blenx_auth.fastapi.class_builder_sqla import build_sqla_models
 from blenx_auth.fastapi.current_user import make_current_user_dependencies
 from blenx_auth.fastapi.routers._provider import PluginRouterConfig
 from fastapi import APIRouter, Depends
-
 if TYPE_CHECKING:
     from blenx_auth.sqlalchemy.base import UserId
     from blenx_auth.sqlalchemy.repositories import (
@@ -111,28 +110,34 @@ class SQLAlchemyAuth(AuthBackend[Any]):
         overrides = overrides or {}
         collect = _collect_fn(ordered_plugins, overrides)
 
-
+        table_mixins = collect("table_mixin", None)
+        print('table_mixins',table_mixins)
+        read_mixins = collect("read_mixin", None)
+        create_mixins = collect("create_mixin", None)
+        update_mixins = collect("update_mixin", None)
         user_model, refresh_model, oauth_model = build_sqla_models(
             auth_base=AuthBase,
             core_mixin=BaseUserTableMixin,
             tablename=tablename,
+            table_mixins=table_mixins,
             refresh_token_factory=make_refresh_token_model,
             oauth_account_factory=make_oauth_account_model,
         )
 
         register_schema = build_pydantic_model(
-            "UserCreate", base=RegisterRequest, kind="create"
+            "UserCreate", base=RegisterRequest, kind="create",mixins=create_mixins
         )
         user_read_schema = build_pydantic_model(
-            "UserRead", base=UserRead, kind="read"
+            "UserRead", base=UserRead, kind="read",mixins=read_mixins
         )
         user_update_schema = build_pydantic_model(
-            "UserUpdate", base=UserUpdate,kind="update"
+            "UserUpdate", base=UserUpdate,kind="update",mixins=update_mixins
         )
         user_admin_update_schema = build_pydantic_model(
             "UserAdminUpdate",
             base=UserAdminUpdate,
-            kind="update",
+            kind="update", 
+            mixins=collect("update_mixin",None),
         )
 
         run_contract_check(

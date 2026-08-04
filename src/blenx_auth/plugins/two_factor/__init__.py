@@ -23,7 +23,7 @@ from typing import Any
 from blenx_auth.core.plugins import AuthPlugin
 from blenx_auth.core.plugins.hooks import AuthHooks
 from blenx_auth.plugins.two_factor.mixins import (
-    TwoFactorCreateMixin,
+    TwoFactorUpdateMixin,
     TwoFactorReadMixin,
     TwoFactorTableMixin,
 )
@@ -66,7 +66,7 @@ def make_two_factor_plugin(*, otp_repo: OtpRepository) -> AuthPlugin:
         name="two_factor",
         table_mixin=TwoFactorTableMixin,
         read_mixin=TwoFactorReadMixin,
-        create_mixin=TwoFactorCreateMixin,
+        update_mixin=TwoFactorUpdateMixin,
         hooks=AuthHooks(transform_login_result=(transform_login,)),
         router_factory=router_factory,
     )
