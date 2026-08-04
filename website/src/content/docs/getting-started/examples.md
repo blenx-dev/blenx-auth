@@ -17,6 +17,8 @@ example is a self-contained program you can run to exercise the full auth lifecy
    real database session.
 3. **[Beanie example](/examples/beanie/)** — Wires the Beanie (MongoDB) repositories behind
    the same services, demonstrating storage-agnosticism.
+4. **[FastAPI example](/examples/fastapi/)** — A complete FastAPI app wired to the
+   `SQLAlchemyAuth` composition root, including protected endpoints and the error handler.
 
 ## How to run examples
 
@@ -34,4 +36,8 @@ python examples/sqlalchemy_example.py
 # Beanie (MongoDB)
 pip install -e ".[beanie]"
 python examples/beanie_example.py
+
+# FastAPI (in-memory SQLite; swap the engine for Postgres in production)
+pip install -e ".[fastapi]"
+python examples/fastapi_example.py
 ```

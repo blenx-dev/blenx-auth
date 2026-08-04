@@ -59,7 +59,6 @@ class BaseUserCreate(BaseModel):
         str,
         Field(min_length=PasswordPolicy.MIN_LENGTH, max_length=PasswordPolicy.MAX_LENGTH),
     ]
-    birthdate: dt.date | None = None
 
 
 class RegisterRequest(BaseUserCreate):
@@ -78,8 +77,6 @@ class BaseUserUpdate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    birthdate: dt.date | None = None
-
 
 class UserUpdate(BaseUserUpdate):
     """Default user update payload schema."""
@@ -97,7 +94,6 @@ class BaseUserAdminUpdate(BaseModel):
     is_active: bool | None = None
     is_superuser: bool | None = None
     is_verified: bool | None = None
-    birthdate: dt.date | None = None
 
 
 class UserAdminUpdate(BaseUserAdminUpdate):
