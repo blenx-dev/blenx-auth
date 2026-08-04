@@ -18,7 +18,6 @@ from blenx_auth.core.plugins.collisions import check_no_field_collisions
 def build_pydantic_model(
     name: str,
     base: type[BaseModel],
-    mixins: Sequence[type[BaseModel]],
     kind: str,
     field_overrides: Mapping[str, tuple[Any, Any]] | None = None,
 ) -> type[BaseModel]:
@@ -28,12 +27,11 @@ def build_pydantic_model(
     ``field_overrides`` replaces specific fields after composition (e.g. a
     backend-specific identity type); values are ``(annotation, default)`` pairs.
     """
-    check_no_field_collisions(*mixins, kind=kind)
     return cast(
         type[BaseModel],
         create_model(
             name,
-            __base__=(base, *mixins),
+            __base__=(base),
             **cast(dict[str, Any], field_overrides or {}),
         ),
     )

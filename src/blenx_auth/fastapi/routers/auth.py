@@ -51,7 +51,7 @@ ServiceDep = Callable[..., Awaitable[AuthenticationService[Any]]]
 
 # Registration fields owned by the core create schema; everything else on the
 # request is a consumer/plugin-declared field and flows through to the model.
-_CORE_REGISTER_FIELDS = frozenset({"email", "password", "birthdate"})
+_CORE_REGISTER_FIELDS = frozenset({"email", "password","display_name"})
 
 
 def _client_metadata(request: Request) -> tuple[str | None, str | None, str | None]:
@@ -95,7 +95,7 @@ def make_auth_router(
         return await auth_service.register(
             email=payload.email,  # type: ignore[attr-defined]
             password=payload.password,  # type: ignore[attr-defined]
-            birthdate=payload.birthdate,  # type: ignore[attr-defined]
+            display_name=payload.display_name,  # type: ignore[attr-defined]
             extra_fields=extra_fields,
         )
 

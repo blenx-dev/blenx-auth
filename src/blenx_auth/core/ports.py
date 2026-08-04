@@ -36,11 +36,11 @@ class UserAccount(Protocol[IdT]):
 
     id: IdT
     email: str
+    display_name: str
     hashed_password: str
     is_active: bool
     is_superuser: bool
     is_verified: bool
-    birthdate: date | None
     created_at: datetime
     email_verified_at: datetime | None
     failed_login_attempts: int

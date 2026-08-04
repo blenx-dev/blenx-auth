@@ -43,13 +43,14 @@ def make_users_router(
         """The authenticated user's public profile."""
         return user
 
+    print(user_update_schema.model_fields)
     @router.patch("/me", response_model=user_read_schema, summary="Update current user profile")
     async def update_me(
         payload: user_update_schema,  # type: ignore[valid-type]
         user: Annotated[UserAccount[Any], Depends(auth.get_current_user)],
         user_service: Annotated[UserService[Any], Depends(auth.get_user_service)],
     ) -> UserAccount[Any]:
-        """Patch the current user's self-serviceable fields (e.g. birthdate)."""
+        """Patch the current user's self-serviceable fields (e.g. display_name)."""
         return await user_service.update(user_id=user.id, payload=payload)
 
     @router.get("/{user_id}", response_model=user_read_schema, summary="Admin: get user")
@@ -72,7 +73,7 @@ def make_users_router(
         _superuser: Annotated[UserAccount[Any], Depends(auth.get_current_superuser)],
         user_service: Annotated[UserService[Any], Depends(auth.get_user_service)],
     ) -> UserAccount[Any]:
-        """Admin-only user update (flags, verification state, birthdate)."""
+        """Admin-only user update (flags, verification state, display_name)."""
         return await user_service.update(user_id=user_id, payload=payload)
 
     return router

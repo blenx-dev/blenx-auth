@@ -20,7 +20,8 @@ from typing import Annotated
 from blenx_auth.core.exceptions import AuthError
 from blenx_auth.core.ports import UserAccount
 from blenx_auth.core.settings import AuthSettings
-from blenx_auth.fastapi import SQLAlchemyAuth, auth_error_handler
+from blenx_auth.fastapi import auth_error_handler
+from blenx_auth.fastapi.sqlalchemy import SQLAlchemyAuth
 from blenx_auth.sqlalchemy.base import AuthBase
 
 from fastapi import Depends, FastAPI
@@ -90,8 +91,10 @@ def demo() -> None:
     with TestClient(app) as client:
         r = client.post(
             "/auth/register",
-            json={"email": "ann@example.com", "password": "password-123"},
+            json={"email": "ann@example.com", "password": "password-123","display_name":"user 123"},
         )
+        print(r)
+        print(r.json())
         print(f"register: {r.status_code} {r.json()['email']}")
 
         r = client.post(

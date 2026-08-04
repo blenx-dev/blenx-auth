@@ -165,7 +165,7 @@ class SQLAlchemyUserRepository(UserRepository[UserId]):
             hashed_password=data.hashed_password,
             is_verified=data.is_verified,
             is_superuser=data.is_superuser,
-            birthdate=data.birthdate,
+            display_name=data.display_name,
             **extra_fields,
         )
         try:

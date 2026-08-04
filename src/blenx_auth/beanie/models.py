@@ -103,7 +103,6 @@ class User(Document):
     is_active: bool = True
     is_superuser: bool = False
     is_verified: bool = False
-    birthdate: date | None = None
     created_at: UTCDateTime = Field(default_factory=_now)
     email_verified_at: OptUTCDateTime = None
     failed_login_attempts: int = 0

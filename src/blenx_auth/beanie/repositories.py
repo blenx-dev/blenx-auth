@@ -68,7 +68,6 @@ class BeanieUserRepository(UserRepository[PydanticObjectId]):
             hashed_password=data.hashed_password,
             is_verified=data.is_verified,
             is_superuser=data.is_superuser,
-            birthdate=data.birthdate,
             **extra_fields,
         )
         try:
@@ -127,13 +126,14 @@ class BeanieRefreshTokenRepository(RefreshTokenRepository[PydanticObjectId]):
 
     async def revoke(self, token_id: PydanticObjectId) -> None:
         """Idempotently mark a single refresh token revoked."""
-        await self._model.find_one({"_id": token_id, "revoked_at": None}).update(
+        q = self._model.find_one({"_id": token_id, "revoked_at": None}).update(
             {"$set": {"revoked_at": datetime.now(UTC)}}
         )
 
+
     async def revoke_all_for_user(self, user_id: PydanticObjectId) -> None:
         """Revoke every outstanding refresh token belonging to ``user_id``."""
-        await self._model.find({"user_id": user_id, "revoked_at": None}).update(
+        self._model.find({"user_id": user_id, "revoked_at": None}).update(
             {"$set": {"revoked_at": datetime.now(UTC)}}
         )
 

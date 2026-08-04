@@ -55,7 +55,7 @@ class BaseUserTableMixin:
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    birthdate: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
+    display_name: Mapped[str] = mapped_column(String, nullable=True)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

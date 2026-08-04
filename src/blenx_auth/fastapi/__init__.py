@@ -12,7 +12,6 @@ The recommended way to wire auth into a host app is the **composition roots**:
 - :func:`auth_error_handler` renders every :class:`AuthError` as JSON.
 """
 
-from blenx_auth.fastapi.composition import BeanieAuth, SQLAlchemyAuth
 from blenx_auth.fastapi.current_user import (
     CurrentUserDeps,
     bearer_scheme,
@@ -40,13 +39,11 @@ from blenx_auth.fastapi.routers import (
 
 __all__ = [
     "AuthProvider",
-    "BeanieAuth",
     "CurrentUserDeps",
     "GoogleOIDCOAuth2",
     "OAuthClient",
     "Permission",
     "PermissionGuards",
-    "SQLAlchemyAuth",
     "auth_error_handler",
     "bearer_scheme",
     "get_google_oauth_client",

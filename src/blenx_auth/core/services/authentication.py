@@ -82,7 +82,7 @@ class AuthenticationService(Generic[IdT]):
         *,
         email: str,
         password: str,
-        birthdate: date | None = None,
+        display_name: str | None = None,
         extra_fields: dict[str, Any] | None = None
     ) -> UserAccount[IdT]:
         """Create an unverified account, then mail its verification link.
@@ -104,7 +104,7 @@ class AuthenticationService(Generic[IdT]):
                 email=email,
                 hashed_password=hash_password(password),
                 is_verified=False,
-                birthdate=birthdate,
+                display_name=display_name or '',
                 extra_fields=extra_fields or {},
             )
         )
@@ -189,11 +189,10 @@ class AuthenticationService(Generic[IdT]):
             return await self._issue_tokens(
                 linked, device_name=device_name, ip_address=ip_address, user_agent=user_agent
             )
-
         user = await self._users.get_by_email(email)
         if user is None:
             user = await self._users.create(
-                NewUser(email=email, hashed_password="", is_verified=True)
+                NewUser(email=email, hashed_password="", is_verified=True,display_name='')
             )
         else:
             user = await self._require_active(user)

@@ -53,7 +53,7 @@ CORE_USER_COLUMNS: tuple[Column[Any], ...] = (
     Column("is_active", Boolean, default=True),
     Column("is_superuser", Boolean, default=False),
     Column("is_verified", Boolean, default=False),
-    Column("birthdate", Date, nullable=True),
+    Column("display_name", String(100), nullable=True),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
     Column(
         "updated_at",

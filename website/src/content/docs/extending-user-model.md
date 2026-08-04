@@ -22,7 +22,7 @@ class UserAccount(Protocol[IdT]):
     is_active: bool
     is_superuser: bool
     is_verified: bool
-    birthdate: date | None
+    display_name: str
     created_at: datetime
     email_verified_at: datetime | None
     failed_login_attempts: int
@@ -104,7 +104,7 @@ from blenx_auth.core.services.authentication import AuthenticationService
 user = await auth_service.register(
     email="user@example.com",
     password="SecurePass123!",
-    birthdate=date(1990, 1, 1),
+    display_name='',
 )
 
 # After creation, set custom fields and save
@@ -113,7 +113,7 @@ user.department = "Engineering"
 await user_repo.save(user)
 ```
 
-The `register` method itself only handles auth-core fields (email, password, birthdate). Custom fields are set on the returned user object and persisted separately.
+The `register` method itself only handles auth-core fields (email, password, display_name). Custom fields are set on the returned user object and persisted separately.
 
 ## User Update with Custom Fields
 

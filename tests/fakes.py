@@ -25,7 +25,7 @@ class FakeUser:
     is_active: bool = True
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     is_superuser: bool = False
-    birthdate: date | None = None
+    display_name: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     email_verified_at: datetime | None = None
     failed_login_attempts: int = 0
@@ -49,7 +49,7 @@ class FakeUsers:
             email=data.email,
             hashed_password=data.hashed_password,
             is_verified=data.is_verified,
-            birthdate=data.birthdate,
+            display_name=data.display_name,
         )
         for name, value in data.extra_fields.items():
             setattr(user, name, value)

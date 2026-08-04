@@ -14,6 +14,7 @@ are declared here, in one place, and to keep the module importable standalone).
 """
 
 from __future__ import annotations
+from typing_extensions import Optional
 
 import datetime as dt
 import uuid
@@ -31,11 +32,11 @@ class BaseUserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    display_name: str
     email: EmailStr
     is_active: bool
     is_superuser: bool
     is_verified: bool
-    birthdate: dt.date | None = None
     email_verified_at: dt.datetime | None = None
     created_at: dt.datetime = Field(default_factory=dt.datetime.now)
 
@@ -54,12 +55,12 @@ class BaseUserCreate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    display_name: Optional[str]
     email: EmailStr
     password: Annotated[
         str,
         Field(min_length=PasswordPolicy.MIN_LENGTH, max_length=PasswordPolicy.MAX_LENGTH),
     ]
-    birthdate: dt.date | None = None
 
 
 class RegisterRequest(BaseUserCreate):
@@ -77,7 +78,7 @@ class BaseUserUpdate(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid")
-
+    display_name: Optional[str]
 
 class UserUpdate(BaseUserUpdate):
     """Default user update payload schema."""

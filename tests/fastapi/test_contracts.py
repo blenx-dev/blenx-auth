@@ -19,7 +19,7 @@ def _fake_user_model(*columns: str) -> type:
     return _Model
 
 
-User = _fake_user_model("id", "email", "birthdate", "is_active", "is_verified")
+User = _fake_user_model("id", "email", "display_name", "is_active", "is_verified")
 
 
 class ReadOK(BaseModel):
@@ -35,7 +35,7 @@ class ReadExtra(BaseModel):
 class CreateOK(BaseModel):
     email: str
     password: str
-    birthdate: str | None = None
+    display_name: str | None = None
 
 
 class UpdateOK(BaseModel):
@@ -88,11 +88,11 @@ def test_model_fields_lookup_used_when_no_table() -> None:
     class BeanieLikeUser(BaseModel):
         id: str
         email: str
-        birthdate: str | None = None
+        display_name: str | None = None
 
     class BeanieUpdate(BaseModel):
         email: str | None = None
-        birthdate: str | None = None
+        display_name: str | None = None
 
     run_contract_check(BeanieLikeUser, ReadOK, CreateOK, BeanieUpdate)
 
@@ -123,11 +123,11 @@ def test_beanie_validator_uses_model_fields() -> None:
     class BeanieLikeUser(BaseModel):
         id: str
         email: str
-        birthdate: str | None = None
+        display_name: str | None = None
 
     class BeanieUpdate(BaseModel):
         email: str | None = None
-        birthdate: str | None = None
+        display_name: str | None = None
 
     validate_beanie_contract(BeanieLikeUser, ReadOK, CreateOK, BeanieUpdate)
     with pytest.raises(ExceptionGroup):
@@ -138,7 +138,7 @@ def test_run_contract_check_dispatches_on_backend_shape() -> None:
     class BeanieLikeUser(BaseModel):
         id: str
         email: str
-        birthdate: str | None = None
+        display_name: str | None = None
         is_active: bool = True
         is_verified: bool = False
 

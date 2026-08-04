@@ -30,7 +30,7 @@ def test_core_columns_declared() -> None:
     names = {c.name for c in CORE_USER_COLUMNS}
     assert {"id", "email", "hashed_password", "is_active", "is_superuser", "is_verified"} <= names
     assert "email" in names
-    assert "birthdate" in names
+    assert "display_name" in names
     assert "created_at" in names
 
 

@@ -31,10 +31,10 @@ class NewUser:
     """
 
     email: str
+    display_name: str
     hashed_password: str
     is_verified: bool = False
     is_superuser: bool = False
-    birthdate: date | None = None
     extra_fields: dict[str, Any] = field(default_factory=dict)
 
 
