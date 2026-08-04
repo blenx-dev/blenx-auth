@@ -1,0 +1,37 @@
+---
+title: blenx-auth
+description: A reusable, framework-agnostic authentication library for Python web applications.
+template: splash
+hero:
+  tagline: A reusable, framework-agnostic authentication library for Python web applications.
+  image:
+    file: ../../assets/houston.webp
+  actions:
+    - text: Quick Start
+      link: /getting-started/quickstart/
+      icon: right-arrow
+    - text: Installation
+      link: /getting-started/installation/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+blenx-auth is a reusable authentication library for Python web applications. It ships a
+framework-agnostic core (user management, token strategies, email verification, password
+reset, OAuth) with optional integrations for FastAPI, SQLAlchemy, and Beanie (MongoDB).
+
+<CardGrid stagger>
+  <Card title="Installation" icon="package">
+    Install blenx-auth from PyPI and pick the extras you need.
+    <a href="/getting-started/installation/">Read the guide →</a>
+  </Card>
+  <Card title="Quick Start" icon="rocket">
+    Wire up blenx-auth in three steps: pick a backend, bind the services, mount the routers.
+    <a href="/getting-started/quickstart/">Follow the guide →</a>
+  </Card>
+  <Card title="Core Concepts" icon="book">
+    Learn about the layered architecture, protocols, and token strategy seam.
+    <a href="/core-concepts/architecture/">Read more →</a>
+  </Card>
+</CardGrid>

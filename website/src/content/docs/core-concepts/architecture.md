@@ -1,3 +1,7 @@
+---
+title: "blenx-auth"
+---
+
 Reusable authentication library for FastAPI applications.
 
 > **Status:** Beta. Open for feedback.
@@ -82,7 +86,6 @@ See the `examples/` directory for:
 - `standalone.py` — wiring core services to in-memory fakes (no DB, no web framework)
 - `sqlalchemy_example.py` — using the SQLAlchemy repositories
 - `beanie_example.py` — using the Beanie (MongoDB) repositories
-
 
 ## License
 
