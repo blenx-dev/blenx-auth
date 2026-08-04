@@ -51,7 +51,7 @@ ServiceDep = Callable[..., Awaitable[AuthenticationService[Any]]]
 
 # Registration fields owned by the core create schema; everything else on the
 # request is a consumer/plugin-declared field and flows through to the model.
-_CORE_REGISTER_FIELDS = frozenset({"email", "password","display_name"})
+_CORE_REGISTER_FIELDS = frozenset({"email", "password", "display_name"})
 
 
 def _client_metadata(request: Request) -> tuple[str | None, str | None, str | None]:

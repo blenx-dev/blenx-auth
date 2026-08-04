@@ -90,9 +90,7 @@ class SqlaStorageContext:
         self._refresh_model = make_refresh_token_model(AuthBase)
         self._oauth_model = make_oauth_account_model(AuthBase)
 
-        self._user_repo = SQLAlchemyUserRepository(
-            session_factory(), model=self._user_model
-        )
+        self._user_repo = SQLAlchemyUserRepository(session_factory(), model=self._user_model)
         self._refresh_repo = SQLAlchemyRefreshTokenRepository(
             session_factory(), model=self._refresh_model
         )

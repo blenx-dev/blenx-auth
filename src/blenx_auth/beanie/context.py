@@ -47,16 +47,12 @@ class BeanieStorageContext:
         self._settings = settings
         self._plugins = resolve_plugin_order(plugins)
 
-        mixins: list[type] = [
-            p.beanie_mixin for p in self._plugins if p.beanie_mixin is not None
-        ]
+        mixins: list[type] = [p.beanie_mixin for p in self._plugins if p.beanie_mixin is not None]
         if consumer_document_mixin is not None:
             mixins.append(consumer_document_mixin)
 
         self._user_model = build_beanie_model("User", BeanieUser, mixins)
-        self._plugin_documents = tuple(
-            doc for p in self._plugins for doc in p.beanie_documents
-        )
+        self._plugin_documents = tuple(doc for p in self._plugins for doc in p.beanie_documents)
 
         self._user_repo = BeanieUserRepository(model=self._user_model)
         self._refresh_repo = BeanieRefreshTokenRepository()

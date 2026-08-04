@@ -83,7 +83,7 @@ class AuthenticationService(Generic[IdT]):
         email: str,
         password: str,
         display_name: str | None = None,
-        extra_fields: dict[str, Any] | None = None
+        extra_fields: dict[str, Any] | None = None,
     ) -> UserAccount[IdT]:
         """Create an unverified account, then mail its verification link.
 
@@ -104,7 +104,7 @@ class AuthenticationService(Generic[IdT]):
                 email=email,
                 hashed_password=hash_password(password),
                 is_verified=False,
-                display_name=display_name or '',
+                display_name=display_name or "",
                 extra_fields=extra_fields or {},
             )
         )
@@ -192,7 +192,7 @@ class AuthenticationService(Generic[IdT]):
         user = await self._users.get_by_email(email)
         if user is None:
             user = await self._users.create(
-                NewUser(email=email, hashed_password="", is_verified=True,display_name='')
+                NewUser(email=email, hashed_password="", is_verified=True, display_name="")
             )
         else:
             user = await self._require_active(user)
@@ -281,9 +281,7 @@ class AuthenticationService(Generic[IdT]):
             raise AccountLockedError(retry_after=self._settings.account_lockout_minutes * 60)
         await self._users.save(user)
 
-    async def _require_active(
-        self, user: UserAccount[IdT] | None
-    ) -> UserAccount[IdT]:
+    async def _require_active(self, user: UserAccount[IdT] | None) -> UserAccount[IdT]:
         """Return ``user`` when active, else raise the domain error."""
         if user is None:
             raise InvalidCredentialsError()

@@ -22,11 +22,12 @@ class TwoFactorTableMixin:
 
 class TwoFactorReadMixin(BaseModel):
     is_2fa_enabled: bool
-    two_factor_type: Literal['app', 'email'] | None = None
+    two_factor_type: Literal["app", "email"] | None = None
+
 
 class TwoFactorUpdateMixin(BaseModel):
     is_2fa_enabled: bool | None = None
-    two_factor_type: Literal['app', 'email'] | None = None
+    two_factor_type: Literal["app", "email"] | None = None
 
 
 __all__ = ["TwoFactorUpdateMixin", "TwoFactorReadMixin", "TwoFactorTableMixin"]

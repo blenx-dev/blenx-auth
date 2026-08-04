@@ -31,49 +31,14 @@ deferred to strings; eager annotations keep the sub-dependencies concrete. Only 
 so they are not evaluated at class-definition time.
 """
 
-import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import reduce
-from typing import TYPE_CHECKING, Annotated, Any
 
-from blenx_auth.core.contracts import run_contract_check
-from blenx_auth.core.email import NullEmailSender
-from blenx_auth.core.impl_protocols import AuthBackend
-from blenx_auth.core.jwt import TokenService
-from blenx_auth.core.plugins import AuthPlugin, resolve_plugin_order
+from blenx_auth.core.plugins import AuthPlugin
 from blenx_auth.core.plugins.hooks import AuthHooks, merge_hooks
-from blenx_auth.core.ports import EmailSender
-from blenx_auth.core.schemas import RegisterRequest, UserAdminUpdate, UserRead, UserUpdate
-from blenx_auth.core.services import (
-    AuthenticationService,
-    EmailVerificationService,
-    PasswordResetService,
-    UserService,
-)
-from blenx_auth.core.settings import AuthSettings
-from blenx_auth.fastapi.class_builder_pydantic import build_pydantic_model
-from blenx_auth.fastapi.class_builder_sqla import build_sqla_models
-from blenx_auth.fastapi.current_user import make_current_user_dependencies
-from blenx_auth.fastapi.routers._provider import PluginRouterConfig
-from fastapi import APIRouter, Depends
-
-if TYPE_CHECKING:
-    from beanie import PydanticObjectId
-    from blenx_auth.beanie.repositories import (
-        BeanieOAuthAccountRepository,
-        BeanieRefreshTokenRepository,
-        BeanieUserRepository,
-    )
-    from blenx_auth.sqlalchemy.base import UserId
-    from blenx_auth.sqlalchemy.repositories import (
-        SQLAlchemyOAuthAccountRepository,
-        SQLAlchemyRefreshTokenRepository,
-        SQLAlchemyUserRepository,
-    )
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
-def _collect_fn(
+def collect_fn(
     ordered_plugins: Sequence[AuthPlugin], overrides: Mapping[str, type]
 ) -> Callable[[str, type | None], list[type]]:
     """Return a ``collect(attr, consumer_mixin)`` closure for one composition.
@@ -83,9 +48,7 @@ def _collect_fn(
     """
 
     def collect(attr: str, consumer_mixin: type | None) -> list[type]:
-        mixins = [
-            getattr(p, attr) for p in ordered_plugins if getattr(p, attr) is not None
-        ]
+        mixins = [getattr(p, attr) for p in ordered_plugins if getattr(p, attr) is not None]
         if consumer_mixin is not None:
             mixins.append(consumer_mixin)
         resolved = [overrides.get(m.__name__, m) for m in mixins]
@@ -94,8 +57,5 @@ def _collect_fn(
     return collect
 
 
-def _merge_plugin_hooks(plugins: Sequence[AuthPlugin], base: AuthHooks) -> AuthHooks:
+def merge_plugin_hooks(plugins: Sequence[AuthPlugin], base: AuthHooks) -> AuthHooks:
     return reduce(merge_hooks, (p.hooks for p in plugins), base)
-
-
-

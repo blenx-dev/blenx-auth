@@ -39,9 +39,7 @@ class PluginCycleError(Exception):
 
     def __init__(self, cycle_members: list[str]) -> None:
         self.cycle_members = cycle_members
-        super().__init__(
-            f"circular plugin dependency detected among: {cycle_members}"
-        )
+        super().__init__(f"circular plugin dependency detected among: {cycle_members}")
 
 
 @dataclass(frozen=True, slots=True)

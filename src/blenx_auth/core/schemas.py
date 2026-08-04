@@ -80,6 +80,7 @@ class BaseUserUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     display_name: Optional[str]
 
+
 class UserUpdate(BaseUserUpdate):
     """Default user update payload schema."""
 

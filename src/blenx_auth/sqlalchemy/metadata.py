@@ -113,9 +113,7 @@ def build_composed_user_table(
     return Table(tablename, metadata, *copies)
 
 
-def register_extra_tables(
-    *, metadata: MetaData, plugin_tables: Sequence[Table]
-) -> None:
+def register_extra_tables(*, metadata: MetaData, plugin_tables: Sequence[Table]) -> None:
     """Merge every plugin ``Table`` onto ``metadata`` (idempotent)."""
     for table in plugin_tables:
         if table.name not in metadata.tables:

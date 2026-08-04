@@ -46,11 +46,13 @@ class Settings(AuthSettings):
     google_client_id = ""
     google_client_secret = ""
 
+
 class PyOtpRepository(OtpRepository):
     """Code verification for one user; raises on a bad/missing code."""
 
     async def verify_code(self, user_id: str, code: str) -> None:
         raise AuthError()
+
 
 def create_app() -> FastAPI:
     """Build the app: one composition root bound to an in-memory SQLite DB."""
@@ -71,8 +73,11 @@ def create_app() -> FastAPI:
     # The composition root wires the SQLAlchemy repositories to the core
     # services and exposes every FastAPI dependency (service getters plus the
     # current-user guards) bound to its session factory.
-    auth = SQLAlchemyAuth(settings=Settings(), session_factory=session_factory,
-    plugins=[make_two_factor_plugin(otp_repo=PyOtpRepository())])
+    auth = SQLAlchemyAuth(
+        settings=Settings(),
+        session_factory=session_factory,
+        plugins=[make_two_factor_plugin(otp_repo=PyOtpRepository())],
+    )
 
     app = FastAPI(lifespan=lifespan)
     app.add_exception_handler(AuthError, auth_error_handler)
@@ -99,7 +104,11 @@ def demo() -> None:
     with TestClient(app) as client:
         r = client.post(
             "/auth/register",
-            json={"email": "ann@example.com", "password": "password-123","display_name":"user 123"},
+            json={
+                "email": "ann@example.com",
+                "password": "password-123",
+                "display_name": "user 123",
+            },
         )
         print(r)
         print(r.json())

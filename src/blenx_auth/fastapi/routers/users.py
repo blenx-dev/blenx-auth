@@ -44,6 +44,7 @@ def make_users_router(
         return user
 
     print(user_update_schema.model_fields)
+
     @router.patch("/me", response_model=user_read_schema, summary="Update current user profile")
     async def update_me(
         payload: user_update_schema,  # type: ignore[valid-type]

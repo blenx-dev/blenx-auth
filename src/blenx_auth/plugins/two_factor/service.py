@@ -30,8 +30,7 @@ CHALLENGE_TTL_SECONDS = 300
 class OtpRepository(Protocol):
     """Code verification for one user; raises on a bad/missing code."""
 
-    async def verify_code(self, user_id: str, code: str) -> None:
-        ...
+    async def verify_code(self, user_id: str, code: str) -> None: ...
 
 
 class TwoFactorService:

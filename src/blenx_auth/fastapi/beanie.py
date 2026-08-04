@@ -31,10 +31,7 @@ deferred to strings; eager annotations keep the sub-dependencies concrete. Only 
 so they are not evaluated at class-definition time.
 """
 
-from blenx_auth.fastapi.composition import _merge_plugin_hooks
-from blenx_auth.fastapi.composition import _collect_fn
-from collections.abc import  Awaitable, Callable, Mapping, Sequence
-from functools import reduce
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from blenx_auth.core.contracts import run_contract_check
@@ -53,7 +50,7 @@ from blenx_auth.core.services import (
 )
 from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.class_builder_pydantic import build_pydantic_model
-from blenx_auth.fastapi.class_builder_sqla import build_sqla_models
+from blenx_auth.fastapi.composition import collect_fn, merge_plugin_hooks
 from blenx_auth.fastapi.current_user import make_current_user_dependencies
 from blenx_auth.fastapi.routers._provider import PluginRouterConfig
 from fastapi import APIRouter, Depends
@@ -65,6 +62,8 @@ if TYPE_CHECKING:
         BeanieRefreshTokenRepository,
         BeanieUserRepository,
     )
+
+
 class BeanieAuth(AuthBackend[Any]):
     """Composition root: Beanie/MongoDB backend wired to core services.
 
@@ -104,7 +103,7 @@ class BeanieAuth(AuthBackend[Any]):
 
         ordered_plugins = resolve_plugin_order(plugins)
         overrides = overrides or {}
-        collect = _collect_fn(ordered_plugins, overrides)
+        collect = collect_fn(ordered_plugins, overrides)
 
         table_mixins = collect("table_mixin", consumer_table_mixin)
         read_mixins = collect("read_mixin", consumer_read_mixin)
@@ -117,7 +116,7 @@ class BeanieAuth(AuthBackend[Any]):
             user_model = BeanieUser
 
         register_schema = build_pydantic_model(
-            "UserCreate", base=RegisterRequest,  kind="create",mixins=create_mixins
+            "UserCreate", base=RegisterRequest, kind="create", mixins=create_mixins
         )
 
         # Beanie's identity is a Mongo ObjectId, not a UUID: the composed read
@@ -131,18 +130,13 @@ class BeanieAuth(AuthBackend[Any]):
             field_overrides={"id": (PydanticObjectId, ...)},
         )
         user_update_schema = build_pydantic_model(
-            "UserUpdate", base=UserUpdate, kind="update",mixins=update_mixins
+            "UserUpdate", base=UserUpdate, kind="update", mixins=update_mixins
         )
         user_admin_update_schema = build_pydantic_model(
-            "UserAdminUpdate",
-            base=UserAdminUpdate,
-            kind="update",
-            mixins=[]
+            "UserAdminUpdate", base=UserAdminUpdate, kind="update", mixins=[]
         )
 
-        run_contract_check(
-            user_model, user_read_schema, register_schema, user_update_schema
-        )
+        run_contract_check(user_model, user_read_schema, register_schema, user_update_schema)
 
         self._settings = settings
         self._email_sender: EmailSender = email_sender or NullEmailSender()
@@ -151,7 +145,7 @@ class BeanieAuth(AuthBackend[Any]):
         self._user_model = user_model
         self._plugins = ordered_plugins
         self._base_hooks = base_hooks or AuthHooks()
-        self._hooks = _merge_plugin_hooks(ordered_plugins, self._base_hooks)
+        self._hooks = merge_plugin_hooks(ordered_plugins, self._base_hooks)
         self._users = BeanieUserRepository(model=user_model)
         self._refresh_tokens = BeanieRefreshTokenRepository()
         self._oauth_accounts = BeanieOAuthAccountRepository()

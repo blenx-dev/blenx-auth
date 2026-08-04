@@ -46,8 +46,7 @@ class ServiceTypeError(ServiceRegistryError, TypeError):
         self.expected = expected
         self.actual = actual
         super().__init__(
-            f"service '{name}' is registered as {actual.__name__}, "
-            f"expected {expected.__name__}."
+            f"service '{name}' is registered as {actual.__name__}, expected {expected.__name__}."
         )
 
 

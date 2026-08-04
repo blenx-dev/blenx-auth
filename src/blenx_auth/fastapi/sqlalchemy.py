@@ -31,8 +31,6 @@ deferred to strings; eager annotations keep the sub-dependencies concrete. Only 
 so they are not evaluated at class-definition time.
 """
 
-from blenx_auth.fastapi.composition import _merge_plugin_hooks
-from blenx_auth.fastapi.composition import _collect_fn
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, Sequence
 from functools import reduce
@@ -55,17 +53,20 @@ from blenx_auth.core.services import (
 from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi.class_builder_pydantic import build_pydantic_model
 from blenx_auth.fastapi.class_builder_sqla import build_sqla_models
+from blenx_auth.fastapi.composition import collect_fn, merge_plugin_hooks
 from blenx_auth.fastapi.current_user import make_current_user_dependencies
 from blenx_auth.fastapi.routers._provider import PluginRouterConfig
 from fastapi import APIRouter, Depends
+
 if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
     from blenx_auth.sqlalchemy.base import UserId
     from blenx_auth.sqlalchemy.repositories import (
         SQLAlchemyOAuthAccountRepository,
         SQLAlchemyRefreshTokenRepository,
         SQLAlchemyUserRepository,
     )
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 class SQLAlchemyAuth(AuthBackend[Any]):
@@ -90,6 +91,8 @@ class SQLAlchemyAuth(AuthBackend[Any]):
         base_hooks: AuthHooks | None = None,
         tablename: str = "user",
     ) -> None:
+        from sqlalchemy.ext.asyncio import AsyncSession
+
         from blenx_auth.sqlalchemy.base import AuthBase, UserId
         from blenx_auth.sqlalchemy.models import (
             BaseUserTableMixin,
@@ -101,17 +104,16 @@ class SQLAlchemyAuth(AuthBackend[Any]):
             SQLAlchemyRefreshTokenRepository,
             SQLAlchemyUserRepository,
         )
-        from sqlalchemy.ext.asyncio import AsyncSession
 
         if parse_subject is None:
             parse_subject = uuid.UUID
 
         ordered_plugins = resolve_plugin_order(plugins)
         overrides = overrides or {}
-        collect = _collect_fn(ordered_plugins, overrides)
+        collect = collect_fn(ordered_plugins, overrides)
 
         table_mixins = collect("table_mixin", None)
-        print('table_mixins',table_mixins)
+        print("table_mixins", table_mixins)
         read_mixins = collect("read_mixin", None)
         create_mixins = collect("create_mixin", None)
         update_mixins = collect("update_mixin", None)
@@ -125,24 +127,22 @@ class SQLAlchemyAuth(AuthBackend[Any]):
         )
 
         register_schema = build_pydantic_model(
-            "UserCreate", base=RegisterRequest, kind="create",mixins=create_mixins
+            "UserCreate", base=RegisterRequest, kind="create", mixins=create_mixins
         )
         user_read_schema = build_pydantic_model(
-            "UserRead", base=UserRead, kind="read",mixins=read_mixins
+            "UserRead", base=UserRead, kind="read", mixins=read_mixins
         )
         user_update_schema = build_pydantic_model(
-            "UserUpdate", base=UserUpdate,kind="update",mixins=update_mixins
+            "UserUpdate", base=UserUpdate, kind="update", mixins=update_mixins
         )
         user_admin_update_schema = build_pydantic_model(
             "UserAdminUpdate",
             base=UserAdminUpdate,
-            kind="update", 
-            mixins=collect("update_mixin",None),
+            kind="update",
+            mixins=collect("update_mixin", None),
         )
 
-        run_contract_check(
-            user_model, user_read_schema, register_schema, user_update_schema
-        )
+        run_contract_check(user_model, user_read_schema, register_schema, user_update_schema)
 
         self._settings = settings
         self._session_factory = session_factory
@@ -154,7 +154,7 @@ class SQLAlchemyAuth(AuthBackend[Any]):
         self._oauth_model = oauth_model
         self._plugins = ordered_plugins
         self._base_hooks = base_hooks or AuthHooks()
-        self._hooks = _merge_plugin_hooks(ordered_plugins, self._base_hooks)
+        self._hooks = merge_plugin_hooks(ordered_plugins, self._base_hooks)
 
         self.User = user_model
         self.UserRead = user_read_schema
@@ -319,4 +319,3 @@ class SQLAlchemyAuth(AuthBackend[Any]):
         from blenx_auth.sqlalchemy.repositories import SQLAlchemyOAuthAccountRepository
 
         return SQLAlchemyOAuthAccountRepository(session, model=self._oauth_model)
-

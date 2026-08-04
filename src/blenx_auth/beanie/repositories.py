@@ -130,7 +130,6 @@ class BeanieRefreshTokenRepository(RefreshTokenRepository[PydanticObjectId]):
             {"$set": {"revoked_at": datetime.now(UTC)}}
         )
 
-
     async def revoke_all_for_user(self, user_id: PydanticObjectId) -> None:
         """Revoke every outstanding refresh token belonging to ``user_id``."""
         self._model.find({"user_id": user_id, "revoked_at": None}).update(
