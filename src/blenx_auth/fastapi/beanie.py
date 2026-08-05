@@ -85,7 +85,6 @@ class BeanieAuth(AuthBackend[Any]):
         consumer_read_mixin: type | None = None,
         consumer_create_mixin: type | None = None,
         consumer_update_mixin: type | None = None,
-        consumer_admin_update_mixin: type | None = None,
         overrides: Mapping[str, type] | None = None,
         base_hooks: AuthHooks | None = None,
     ) -> None:

@@ -6,8 +6,6 @@ Requires a running Postgres database; set ``DATABASE_URL`` accordingly.
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 from blenx_auth.core.email import NullEmailSender
 from blenx_auth.core.jwt import TokenService
 from blenx_auth.core.services import AuthenticationService, EmailVerificationService
@@ -23,24 +21,12 @@ from blenx_auth.sqlalchemy import (
 DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/styleos"
 
 
-class Settings(AuthSettings):
-    secret_key = "t" * 32
-    jwt_algorithm = "HS256"
-    access_token_expire_minutes = 30
-    refresh_token_expire_days = 30
-    email_verification_token_expire_minutes = 1440
-    password_reset_token_expire_minutes = 60
-    max_failed_login_attempts = 5
-    account_lockout_minutes = 15
-    login_rate_limit_per_minute = 0
-    frontend_url = "http://localhost:5173"
-    backend_url = "http://localhost:8000"
-    google_client_id = ""
-    google_client_secret = SimpleNamespace(get_secret_value=lambda: "")
-
-
 async def main() -> None:
-    settings = Settings()
+    settings = AuthSettings(
+        secret_key="dev-secret-key-0123456789abcdef0123456789abcdef",
+        frontend_url="http://localhost:5173",
+        backend_url="http://localhost:8000",
+    )
     session_factory = create_session_factory(DATABASE_URL)
 
     async with session_factory() as session:  # type: ignore[attr-defined]

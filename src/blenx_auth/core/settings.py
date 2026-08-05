@@ -11,31 +11,41 @@ it with pydantic-settings, dataclasses, or anything else.
 
 from __future__ import annotations
 
-from typing import Protocol
 
+from dataclasses import dataclass, replace
 
-class AuthSettings(Protocol):
-    """Structural contract for the settings the auth package needs."""
-
+@dataclass(frozen=True, slots=True)
+class AuthSettings:
     # JWT
-    secret_key: str
-    jwt_algorithm: str
+    secret_key: str = "change-me"
+    jwt_algorithm: str = "HS256"
 
-    # Token lifetimes (minutes unless stated otherwise)
-    access_token_expire_minutes: int
-    refresh_token_expire_days: int
-    email_verification_token_expire_minutes: int
-    password_reset_token_expire_minutes: int
+    # Token lifetimes
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 10
+    email_verification_token_expire_minutes: int = 30
+    password_reset_token_expire_minutes: int = 30
 
     # Login hardening
-    max_failed_login_attempts: int
-    account_lockout_minutes: int
-    login_rate_limit_per_minute: int
+    max_failed_login_attempts: int = 3
+    account_lockout_minutes: int = 15
+    login_rate_limit_per_minute: int = 5
 
-    # URLs for email links and OAuth redirects
-    frontend_url: str
-    backend_url: str
+    # URLs
+    frontend_url: str = "http://localhost:3000"
+    backend_url: str = "http://localhost:8000"
 
     # Google OAuth
-    google_client_id: str
-    google_client_secret: str
+    google_client_id: str = ""
+    google_client_secret: str = ""
+
+    def __post_init__(self) -> None:
+        if self.secret_key == "change-me":
+            raise ValueError(
+                "AuthSettings.secret_key must be configured."
+            )
+
+        if len(self.secret_key) < 32:
+            raise ValueError(
+                "secret_key must be at least 32 characters."
+            )

@@ -6,6 +6,7 @@ services work without FastAPI installed.
 """
 
 from __future__ import annotations
+from blenx_auth.core.ports import OAuthAccountRepository, RefreshTokenRepository, UserRepository
 
 import uuid
 from types import SimpleNamespace
@@ -32,7 +33,7 @@ class FakeUser:
         self.locked_until = None
 
 
-class FakeUsers:
+class FakeUsers(UserRepository[FakeUser]):
     def __init__(self) -> None:
         self.rows: dict[str, FakeUser] = {}
 
@@ -51,7 +52,7 @@ class FakeUsers:
         self.rows[user.email] = user
 
 
-class FakeRefreshTokens:
+class FakeRefreshTokens(RefreshTokenRepository):
     def __init__(self) -> None:
         self.rows: dict[str, SimpleNamespace] = {}
 
@@ -80,7 +81,7 @@ class FakeRefreshTokens:
                 row.revoked_at = True
 
 
-class FakeOAuthAccounts:
+class FakeOAuthAccounts(OAuthAccountRepository):
     def __init__(self) -> None:
         self.rows: list[SimpleNamespace] = []
 
@@ -116,26 +117,12 @@ class FakeEmailSender:
 # --- settings stub -------------------------------------------------------
 
 
-def make_settings() -> AuthSettings:
-    return SimpleNamespace(
-        secret_key="t" * 32,
-        jwt_algorithm="HS256",
-        access_token_expire_minutes=30,
-        refresh_token_expire_days=30,
-        email_verification_token_expire_minutes=1440,
-        password_reset_token_expire_minutes=60,
-        max_failed_login_attempts=5,
-        account_lockout_minutes=15,
-        login_rate_limit_per_minute=0,
+async def main() -> None:
+    settings = AuthSettings(
+        secret_key="dev-secret-key-0123456789abcdef0123456789abcdef",
         frontend_url="http://localhost:5173",
         backend_url="http://localhost:8000",
-        google_client_id="",
-        google_client_secret=SimpleNamespace(get_secret_value=lambda: ""),
     )
-
-
-async def main() -> None:
-    settings = make_settings()
     tokens = TokenService(settings)
     users = FakeUsers()
     refresh_tokens = FakeRefreshTokens()

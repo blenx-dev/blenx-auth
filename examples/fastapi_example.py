@@ -1,10 +1,13 @@
-"""FastAPI + SQLAlchemy auth example.
+"""FastAPI auth example — SQLAlchemy + Beanie backends.
 
-A complete, self-contained FastAPI app wired to ``SQLAlchemyAuth``. It runs
-against an in-memory SQLite database so it works out of the box; swap the
-engine for Postgres to use it in real deployments.
+Two self-contained composition roots are demonstrated side by side:
 
-    pip install -e ".[fastapi]"
+- ``create_app`` — ``SQLAlchemyAuth`` on an in-memory SQLite database, ready to
+  run out of the box; swap the engine for Postgres for real deployments.
+- ``create_beanie_app`` — ``BeanieAuth`` on MongoDB; requires a running MongoDB
+  (start one with ``docker run -p 27017:27017 mongo`` or ``podman run ...``).
+
+    pip install -e ".[fastapi,beanie]"
     python examples/fastapi_example.py
 """
 
@@ -31,22 +34,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 
-class Settings(AuthSettings):
-    secret_key = "dev-only-secret-key-change-me-1234567890"
-    jwt_algorithm = "HS256"
-    access_token_expire_minutes = 30
-    refresh_token_expire_days = 30
-    email_verification_token_expire_minutes = 1440
-    password_reset_token_expire_minutes = 60
-    max_failed_login_attempts = 5
-    account_lockout_minutes = 15
-    login_rate_limit_per_minute = 0
-    frontend_url = "http://localhost:5173"
-    backend_url = "http://localhost:8000"
-    google_client_id = ""
-    google_client_secret = ""
-
-
 class PyOtpRepository(OtpRepository):
     """Code verification for one user; raises on a bad/missing code."""
 
@@ -57,7 +44,7 @@ class PyOtpRepository(OtpRepository):
 def create_app() -> FastAPI:
     """Build the app: one composition root bound to an in-memory SQLite DB."""
     engine = create_async_engine(
-        "sqlite+aiosqlite://",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/app",
         poolclass=StaticPool,  # share the one in-memory database across sessions
         connect_args={"check_same_thread": False},
     )
@@ -73,7 +60,11 @@ def create_app() -> FastAPI:
     # The composition root wires the SQLAlchemy repositories to the core
     # services and exposes every FastAPI dependency (service getters plus the
     # current-user guards) bound to its session factory.
-    auth = SQLAlchemyAuth(settings=Settings(), session_factory=session_factory,
+    auth = SQLAlchemyAuth(settings=AuthSettings(
+        secret_key="dev-secret-key-0123456789abcdef0123456789abcdef",
+        frontend_url="http://localhost:5173",
+        backend_url="http://localhost:8000",
+    ), session_factory=session_factory,
     plugins=[make_two_factor_plugin(otp_repo=PyOtpRepository()),make_birthday_plugin()])
 
     app = FastAPI(lifespan=lifespan)

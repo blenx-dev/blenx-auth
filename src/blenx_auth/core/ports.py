@@ -25,7 +25,7 @@ structural ``UserAccount``/``RefreshTokenRow``/``OAuthAccountRow`` contracts.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import  datetime
 from typing import Protocol, TypeVar, runtime_checkable
 
 from blenx_auth.core.dto import EmailMessage, IdT, NewOAuthLink, NewUser

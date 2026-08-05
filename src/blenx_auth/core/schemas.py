@@ -120,8 +120,8 @@ class LoginSuccess(BaseModel):
 
     kind: Literal["token"] = "token"
     access_token: str
-    refresh_token: str | None = None
-    expires_in: int | None = None
+    refresh_token: str 
+    expires_in: int 
     token_type: str = TOKEN_TYPE_BEARER
 
 
