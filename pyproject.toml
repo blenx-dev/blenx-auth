@@ -27,6 +27,8 @@ dev = [
   "sqlalchemy[asyncio]>=2.0.51",
   "fastapi[standard]>=0.141.1",
   "aiosqlite>=0.20,<1.0",
+  "click>=8.1,<9.0",
+  "alembic>=1.13,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +39,12 @@ fastapi = ["fastapi[standard]>=0.115,<1.0", "sqlalchemy[asyncio]>=2.0.51"]
 sqlalchemy = ["sqlalchemy[asyncio]>=2.0.51"]
 # Optional Beanie (MongoDB) backend.
 beanie = ["beanie>=1.27,<2.0", "motor>=3.4,<4.0"]
+# `blenx-auth migrate sync`: dynamically autogenerate Alembic migrations from
+# the currently configured plugin schema.
+migrations = ["click>=8.1,<9.0", "alembic>=1.13,<2.0"]
+
+[project.scripts]
+blenx-auth = "blenx_auth.cli:migrate"
 
 [build-system]
 requires = ["hatchling"]

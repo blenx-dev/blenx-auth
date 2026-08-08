@@ -27,7 +27,6 @@ from blenx_auth.core.constants import OAUTH_ACCOUNT_IDENTITY_COLUMNS
 from blenx_auth.sqlalchemy.base import AuthBase
 from sqlalchemy import (
     Boolean,
-    Date,
     DateTime,
     ForeignKey,
     Integer,

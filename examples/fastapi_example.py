@@ -17,21 +17,23 @@ Two self-contained composition roots are demonstrated side by side:
 # resolved and the guard silently degrades to a query parameter. The library's
 # own routers omit it for the same reason.
 
-from blenx_auth.plugins.two_factor import OtpRepository
-from blenx_auth.plugins.two_factor import make_two_factor_plugin
 from contextlib import asynccontextmanager
 from typing import Annotated
 
 from blenx_auth.core.exceptions import AuthError
+from blenx_auth.core.plugins import AuthPlugin
 from blenx_auth.core.ports import UserAccount
 from blenx_auth.core.settings import AuthSettings
 from blenx_auth.fastapi import auth_error_handler
 from blenx_auth.fastapi.sqlalchemy import SQLAlchemyAuth
-from blenx_auth.sqlalchemy.base import AuthBase
 from blenx_auth.plugins.birthday import make_birthday_plugin
-from fastapi import Depends, FastAPI
+from blenx_auth.plugins.two_factor import OtpRepository, make_two_factor_plugin
+from blenx_auth.sqlalchemy.base import AuthBase
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
+
+from fastapi import Depends, FastAPI
 
 
 class PyOtpRepository(OtpRepository):
@@ -72,6 +74,9 @@ def create_app() -> FastAPI:
     for router in auth.routers:
         app.include_router(router)
 
+    # `blenx-auth migrate sync` reads the configured plugins off `app.auth`.
+    app.auth = auth
+
     @app.get("/me", response_model=auth.UserRead, summary="Current user (protected)")
     async def current_user(
         user: Annotated[UserAccount, Depends(auth.get_current_active_user)],
@@ -83,6 +88,123 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+
+# ---------------------------------------------------------------------------
+# Beanie (MongoDB) backend example
+#
+# BeanieAuth swaps the SQLAlchemy repositories for Mongo-backed ones.  The
+# storage-agnostic core services — and therefore the auth/login/me flow — are
+# identical; only the wiring (engine vs Motor client, ``Document`` models)
+# differs.  Requires the ``beanie`` extra: ``pip install -e ".[beanie]"``.
+# ---------------------------------------------------------------------------
+
+MONGO_URL = "mongodb://localhost:27017"
+MONGO_DB_NAME = "blenx_auth_beanie_example"
+
+
+class NicknameTableMixin:
+    """Plain pydantic-style field — works with Beanie's document builder."""
+
+    nickname: str | None = None
+
+
+class NicknameReadMixin(BaseModel):
+    nickname: str | None = None
+
+
+class NicknameCreateMixin:
+    nickname: str | None = None
+
+
+class NicknameUpdateMixin:
+    nickname: str | None = None
+
+
+NicknamePlugin = AuthPlugin(
+    name="nickname",
+    table_mixin=NicknameTableMixin,
+    read_mixin=NicknameReadMixin,
+    create_mixin=NicknameCreateMixin,
+    update_mixin=NicknameUpdateMixin,
+)
+
+
+def create_beanie_app() -> FastAPI:
+    """Build a Beanie/MongoDB FastAPI app — same core services, Mongo storage.
+
+    Unlike ``create_app`` (SQLite), Beanie needs a running MongoDB instance and
+    registers its ``Document`` models inside the lifespan via ``init_beanie``.
+    """
+    from blenx_auth.beanie.models import RefreshToken
+    from blenx_auth.fastapi.beanie import BeanieAuth
+    from motor.motor_asyncio import AsyncIOMotorClient
+
+    from beanie import init_beanie
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        client = AsyncIOMotorClient(MONGO_URL)
+        await init_beanie(
+            database=client[MONGO_DB_NAME],
+            document_models=[auth.User, RefreshToken],
+        )
+        yield
+        client.close()
+
+    auth = BeanieAuth(
+        settings=AuthSettings(
+            secret_key="dev-secret-key-0123456789abcdef0123456789abcdef",
+            frontend_url="http://localhost:5173",
+            backend_url="http://localhost:8000",
+        ),
+        plugins=[NicknamePlugin],
+    )
+
+    app = FastAPI(lifespan=lifespan)
+    app.add_exception_handler(AuthError, auth_error_handler)
+    for router in auth.routers:
+        app.include_router(router)
+
+    return app
+
+
+def demo_beanie() -> None:
+    """Exercise register/login/me over HTTP against the Beanie app (MongoDB)."""
+    from fastapi.testclient import TestClient
+    from pymongo import MongoClient
+
+    try:
+        MongoClient(MONGO_URL, serverSelectionTimeoutMS=1200).admin.command("ping")
+    except Exception:
+        print("beanie demo: skipped (no MongoDB server at localhost:27017)")
+        return
+
+    MongoClient(MONGO_URL).drop_database(MONGO_DB_NAME)
+
+    app = create_beanie_app()
+    with TestClient(app) as client:
+        r = client.post(
+            "/auth/register",
+            json={
+                "email": "bob@example.com",
+                "password": "password-123",
+                "display_name": "beanie bob",
+            },
+        )
+        print(f"register: {r.status_code} {r.json()['email']}")
+
+        r = client.post(
+            "/auth/login",
+            json={"email": "bob@example.com", "password": "password-123"},
+        )
+        access_token = r.json()["access_token"]
+        print(f"login:    {r.status_code}")
+
+        r = client.get("/users/me", headers={"Authorization": f"Bearer {access_token}"})
+        print(f"me:       {r.status_code} {r.json()['email']}")
+
+    MongoClient(MONGO_URL).drop_database(MONGO_DB_NAME)
 
 
 def demo() -> None:
@@ -114,6 +236,7 @@ def demo() -> None:
 
 
 if __name__ == "__main__":
+    demo_beanie()
     demo()
     import uvicorn
 
